@@ -1,3 +1,6 @@
+/*
+Copyright 2012 Jorge Velazquez
+*/
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

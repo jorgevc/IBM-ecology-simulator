@@ -1,3 +1,6 @@
+/*
+Copyright 2012 Jorge Velazquez
+*/
 
 #include <unistd.h>
 #include <stdlib.h>

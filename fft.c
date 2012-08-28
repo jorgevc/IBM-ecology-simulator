@@ -1,3 +1,6 @@
+/*
+Copyright 2012 Jorge Velazquez
+*/
 #include <fftw3.h>
 #include <stdio.h>
 #include "libPP_5.0.h"

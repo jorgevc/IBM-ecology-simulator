@@ -1,3 +1,6 @@
+/*
+Copyright 2012 Jorge Velazquez
+*/
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
