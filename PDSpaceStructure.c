@@ -5,6 +5,7 @@ Copyright 2012 Jorge Velazquez
 #include <string.h>
 #include <stdlib.h>
 #include <omp.h>
+#include <math.h>
 #include "libPP_5.0.h"
 #include "EntSalArb_MP.h"
 #include "GNA.h"
@@ -18,7 +19,7 @@ main(){
 ///////////////////////////Inicializa parametros de la simulacion
 int NDX=150;
 int NDY=NDX;
-int T_max = 5000;
+int T_max = 10000;
 int NoEnsambles=20;
 
 int CantidadEspecies=2;
@@ -28,7 +29,7 @@ float Birth1= 1.0;
 float Coagulation1; //Brown usa: 0.00002; 
 float CoaIntra1= 0.2; //Modelo J-C 0.0008
 float Dead1= 0.4;
-int RadioBirth1= 15;
+int RadioBirth1= 5;
 int RadioCoa1= 1;
 int RadioCoaIntra1= 2;  //Modelo Heteromyopia 20
 
@@ -45,6 +46,7 @@ int RadioCoaIntra2= 2;
 omp_set_num_threads(4);
 ////////////////////////////Termina Inicializa de paremtros de la simulacion
 /////////////////////////////////////Prepara CONTENEDOR para escribir DATOS:
+int T_st;
 
 Float2D_MP MP_RhoVsT_1;
 int NoEspecies=CantidadEspecies;		
@@ -65,7 +67,7 @@ int NoEspecies=CantidadEspecies;
 	
 
 char contenedor[200];
-	sprintf(contenedor,"PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=15:15,RC=1:1,RCI=2:2)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
+	sprintf(contenedor,"PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=5:15,RC=1:1,RCI=2:2)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
 	//sprintf(contenedor,"BrwRemMPHM-2_(B,D,C,RB,RC)@(2.000,1.000,0.000,10,5)_(NDX,Tmax)@(1000,150)");
 	CreaContenedor(contenedor);
 	
@@ -203,19 +205,30 @@ FILE *pD;
 					{
 						for(Par=0;Par<MaxPar;Par++)
 						{
-							ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
-						}
-						if(MP_RhoVsT.array[i+1][1]==0.0 || MP_RhoVsT.array[i+1][2]==0.0)
-						{
-							i=T_max;
+							ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
 						}
 					}
-					//if(*servicio==1)    //Servicio de control Dinamico
-					//{
-						//printf("entro a servicio\n");
-						//Servicio(i,contenedor,&MP_RhoVsT, &MP_RhoVsT_1, NULL, NULL, e, MaxPar);
-						//SalidaCD(&i,T_max);
-					//} 
+					if((i-(i/200)*200)==10)
+					{
+						for(Par=0;Par<MaxPar;Par++)
+						{
+							ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
+							
+						}
+						SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
+						
+						#pragma omp barrier
+						if(fabs(MP_RhoVsT_1.array[i+1][1]-MP_RhoVsT_1.array[i-4][1])<0.01 || fabs(MP_RhoVsT_1.array[i+1][2]-MP_RhoVsT_1.array[i-4][2])<0.01)
+						{
+							#pragma omp master
+							{
+								T_st=i+1;
+							}
+							i=T_max+1;
+						}
+					}
+					
+					
 				
 						if((i-(i/500)*500)==499)    //Inicializa cada 500 pasos
 						{
@@ -255,9 +268,20 @@ FILE *pD;
 				}
 				
 			//////////////////////////////Termina Monte CARLO
-			for(Par=0;Par<MaxPar;Par++)
+			if(i==T_max)
 			{
-				ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
+				for(Par=0;Par<MaxPar;Par++)
+				{
+					ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
+				}
+				#pragma omp master
+				{
+					T_st=T_max;
+				}
+			}
+			#pragma omp single
+			{
+				ResetFloat2D_MP(&MP_RhoVsT_1);
 			}
 				SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
 				#pragma omp master
@@ -328,10 +352,10 @@ FILE *pD;
 				//fclose(pD);
 			
 			//GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,NULL);	
-				if(MP_RhoVsT_1.array[T_max][1]>0.0 || MP_RhoVsT_1.array[T_max][2]>0.0)
+				if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
 				{
 					pD=fopen(NombrePD, "a");
-					fprintf(pD,"%f %f %f %f\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_max][1], MP_RhoVsT_1.array[T_max][2]); 
+					fprintf(pD,"%f %f %f %f\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles); 
 					fclose(pD);
 				}
 				
