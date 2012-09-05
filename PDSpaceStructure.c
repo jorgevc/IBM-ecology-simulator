@@ -28,7 +28,7 @@ float Birth1= 1.0;
 float Coagulation1; //Brown usa: 0.00002; 
 float CoaIntra1= 0.2; //Modelo J-C 0.0008
 float Dead1= 0.4;
-int RadioBirth1= 5;
+int RadioBirth1= 15;
 int RadioCoa1= 1;
 int RadioCoaIntra1= 2;  //Modelo Heteromyopia 20
 
@@ -37,7 +37,7 @@ float Birth2= 1.0;
 float Coagulation2= 0.0; //Brown usa: 0.00002;
 float CoaIntra2=0.2;
 float Dead2;
-int RadioBirth2= 5;
+int RadioBirth2= 15;
 int RadioCoa2= 1;
 int RadioCoaIntra2= 2;
 
@@ -65,7 +65,7 @@ int NoEspecies=CantidadEspecies;
 	
 
 char contenedor[200];
-	sprintf(contenedor,"PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=5:5,RC=1:1,RCI=2:2)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
+	sprintf(contenedor,"PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=15:15,RC=1:1,RCI=2:2)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
 	//sprintf(contenedor,"BrwRemMPHM-2_(B,D,C,RB,RC)@(2.000,1.000,0.000,10,5)_(NDX,Tmax)@(1000,150)");
 	CreaContenedor(contenedor);
 	
@@ -196,14 +196,20 @@ FILE *pD;
 				{
 					for(Par=0;Par<MaxPar;Par++)
 					{
-						//if((i-(i/10)*10)==0) // Guarda Estado cada 10 pasos
-						//{
-						//GuardaEstadoEn_MP(contenedor,&e[Par],id,Par);
-						//}
 						BarrMCcRyCamp(&e[Par]);
-						//ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
 					}
 					
+					if((i-(i/200)*200)==0)
+					{
+						for(Par=0;Par<MaxPar;Par++)
+						{
+							ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
+						}
+						if(MP_RhoVsT.array[i+1][1]==0.0 || MP_RhoVsT.array[i+1][2]==0.0)
+						{
+							i=T_max;
+						}
+					}
 					//if(*servicio==1)    //Servicio de control Dinamico
 					//{
 						//printf("entro a servicio\n");
@@ -322,10 +328,13 @@ FILE *pD;
 				//fclose(pD);
 			
 			//GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,NULL);	
-
-				pD=fopen(NombrePD, "a");
+				if(MP_RhoVsT_1.array[T_max][1]>0.0 || MP_RhoVsT_1.array[T_max][2]>0.0)
+				{
+					pD=fopen(NombrePD, "a");
 					fprintf(pD,"%f %f %f %f\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_max][1], MP_RhoVsT_1.array[T_max][2]); 
-				fclose(pD);
+					fclose(pD);
+				}
+				
 
 	
 	}
