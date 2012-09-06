@@ -208,7 +208,7 @@ FILE *pD;
 							ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
 						}
 					}
-					if((i-(i/200)*200)==10)
+					if((i-(i/200)*200)==20)
 					{
 						for(Par=0;Par<MaxPar;Par++)
 						{
@@ -218,7 +218,7 @@ FILE *pD;
 						SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
 						
 						#pragma omp barrier
-						if(fabs(MP_RhoVsT_1.array[i+1][1]-MP_RhoVsT_1.array[i-4][1])<0.01 || fabs(MP_RhoVsT_1.array[i+1][2]-MP_RhoVsT_1.array[i-4][2])<0.01)
+						if(fabs(MP_RhoVsT_1.array[i+1][1]-MP_RhoVsT_1.array[i-4][1])<0.001 || fabs(MP_RhoVsT_1.array[i+1][2]-MP_RhoVsT_1.array[i-4][2])<0.001)
 						{
 							#pragma omp master
 							{
@@ -284,10 +284,10 @@ FILE *pD;
 				ResetFloat2D_MP(&MP_RhoVsT_1);
 			}
 				SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
-				#pragma omp master
-				{
-					PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
-				}
+				//#pragma omp master
+				//{
+					//PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
+				//}
 			
 			//Correlacion
 			
@@ -355,7 +355,7 @@ FILE *pD;
 				if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
 				{
 					pD=fopen(NombrePD, "a");
-					fprintf(pD,"%f %f %f %f\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles); 
+					fprintf(pD,"%f %f %f %f %d\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles,T_st); 
 					fclose(pD);
 				}
 				
