@@ -101,7 +101,7 @@ FILE *pD;
 //{
 // for(RadioBirth2=3;RadioBirth2<=3;RadioBirth2+=1)
 // {
-  for(Dead2=0.2;Dead2<0.6;Dead2+=0.01)
+  for(Dead2=0.35;Dead2<0.6;Dead2+=0.01)
   {
 	  pD=fopen(NombrePD, "a");
 				fprintf(pD,"\n"); 
@@ -213,12 +213,11 @@ FILE *pD;
 						for(Par=0;Par<MaxPar;Par++)
 						{
 							ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
-							
 						}
 						SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
 						
 						#pragma omp barrier
-						if(fabs(MP_RhoVsT_1.array[i+1][1]-MP_RhoVsT_1.array[i-4][1])<0.001 || fabs(MP_RhoVsT_1.array[i+1][2]-MP_RhoVsT_1.array[i-4][2])<0.001)
+						if(fabs(MP_RhoVsT_1.array[i+1][1]-MP_RhoVsT_1.array[i-19][1])<0.001 || fabs(MP_RhoVsT_1.array[i+1][2]-MP_RhoVsT_1.array[i-19][2])<0.001)
 						{
 							#pragma omp master
 							{
