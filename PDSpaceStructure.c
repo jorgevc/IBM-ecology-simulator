@@ -278,10 +278,12 @@ FILE *pD;
 					T_st=T_max;
 				}
 			}
+			#pragma omp barrier
 			#pragma omp single
 			{
 				ResetFloat2D_MP(&MP_RhoVsT_1);
 			}
+			
 				SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
 				//#pragma omp master
 				//{
