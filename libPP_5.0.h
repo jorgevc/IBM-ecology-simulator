@@ -78,6 +78,22 @@ float xIni;			/**< The initial value of X where the distribution is "defined". *
 float xFin;			/**< The final value of X where the distribution is "defined". */
 } Dist_MP;
 
+typedef struct {   /** TIPO = 0 : Todos los tipos, s = 0 : Todos los tamanos, NEG = 0 : No negacion, on : resultado del Numero de elementos del grupo que se asigno la ultima vez que se proceso con CFFT_Univ_MP */
+int TIPO;
+int s;
+int NEG;
+int on;
+} Grupo;
+
+typedef struct {
+int MeanSquare;
+int NoEnsambles;
+int NoMuestras;
+int Muestra;	/** Muestra = 0 : Toma todas las muestras. */
+} CorrDescriptor;
+
+extern Grupo GRUPO_INI;
+
 /** Set the value of the Birth rate of a species. 
  * @param[in] L the value of the Birth rate.
  * @param tipo (>0) the number that identifies a specie. If the specie has not been created, it is created.
@@ -468,3 +484,4 @@ void LiberaMemoriaFloat2D_MP(Float2D_MP *ARRAY);
  * @param *Ojbeto the object to be freed.
  */
 void LiberaMemoriaFloat1D_MP(Float1D_MP *Objeto);
+void CFFT_Univ_MP(estado *es, CorrDescriptor *Especifica, Float2D_MP *correlacion, Grupo *TipoOrigen, Grupo *TipoDestino);

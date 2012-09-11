@@ -5,6 +5,7 @@ Copyright 2012 Jorge Velazquez
 #include <string.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <math.h>
 //#include "libPP_3.0.h"
 //#include "libPP_4.0.h"
 #include "libPP_5.0.h"
@@ -46,10 +47,8 @@ strcat(archivo,nombre);
 
 void CreaContenedor(char *nombre)
 {
-char dir[200]="DATOS/";
 
-strcat(dir,nombre);
-mkdir(dir,(S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH));
+mkdir(nombre,(S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH));
 
 fprintf(stdout,"Contenedor creado:\n %s \n",nombre);
 return;
@@ -275,26 +274,20 @@ return;
 void GuardaCorrelacion_MP(char *contenedor, char *prefix, Float1D_MP *corr)
 {
 	FILE *arch;
-	char archivo[250]="DATOS/";
-	char nombre[200];
+	char archivo[250];
 	int Rfin=corr->i_max;
 	
 	int T=corr->T;
 	int r;
 	
-	sprintf(nombre,"/%s_CorrT_%03d",prefix,T);
-	strcat(archivo,contenedor);
-	strcat(archivo,nombre);
+	sprintf(archivo,"%s/%s_CorrT_%03d",contenedor,prefix,T);
 	
 	arch=fopen(archivo,"w");
 	if(arch==NULL){puts("No se pudo abrir archivo");}
 	fputs("#r g\n",arch);
 	for(r=1;r<=Rfin;r++)
 	{
-		//if(corr->array[r]!=0.0)
-		//{
 			fprintf(arch,"%d %f\n",r,corr->array[r]/((float)corr->NoEnsambles));
-		//}
 	}
         fclose(arch);
         
@@ -632,9 +625,10 @@ void GuardaCorrXY(Float2D_MP *correlacion, char *contenedor,char *sufix)
 	int NDY = correlacion->j_max;
 	char nombre[150];
 	
-		printf("Guardando CFFT_XY\n");
-		sprintf(nombre,"DATOS/%s/CFFT_%s_MP_XY",contenedor,sufix);
+		
+		sprintf(nombre,"%s/CFFT_%s_MP_XY",contenedor,sufix);
 		Arch = fopen(nombre,"w");
+		printf("Guardando CFFT_XY\n");
 		for(i=0;i<NDX;i++)
 		{
 			for(j=0;j<NDY;j++)
@@ -644,6 +638,7 @@ void GuardaCorrXY(Float2D_MP *correlacion, char *contenedor,char *sufix)
 					fprintf(Arch,"%d %d %f\n",i,j,correlacion->array[i][j]/((float)correlacion->NoEnsambles));
 				}
 			}
+			
 		}
 		fclose(Arch);
 		printf("Se ha Guardado CFFT_XY\n");
@@ -696,8 +691,10 @@ int RhoPart;
 	return;
 }
 
-int CargaDATOS(char *nombre, estado *es,int NDX, int NDY, float TamParticion)   //Usar sin haber alojado memoria antes!!!
+int CargaDATOS(char *nombre, estado *es,int NDX, int NDY, double TamParticion)   //Usar sin haber alojado memoria antes!!!
 {
+float min_size=10.0;	
+	
 FILE *datos=NULL;
 int **s;
 int **TIPO;
@@ -713,22 +710,23 @@ size_t tam_buffer=500*sizeof(char);
  buffer = (char *) malloc (tam_buffer + 1);
 int args_assigned = 0;
 
-float x,y,size;
+float size;
+double x,y;
 char spec[10];
-float max_x=0.0;
-float max_y=0.0;
-float min_x=10000000.0;
-float min_y=10000000.0;
+double max_x=0.0;
+double max_y=0.0;
+double min_x=10000000.0;
+double min_y=10000000.0;
+int AE=0;
+int DR=0;
+char tag[10];
+char map[MAX_TIPO_DATOS][5];
+InicializaMap(map);
 
-char archivo[250]="OBSERVACIONES/";
 
-//strcat(archivo,contenedor);
-//strcat(archivo,"/");
-strcat(archivo,nombre);
+puts(nombre);
 
-puts(archivo);
-
-	if((datos = fopen (archivo, "r"))==NULL){
+	if((datos = fopen (nombre, "r"))==NULL){
 		puts("\nNo se pudo abrir para leer\n");
 		return 0;
 		}
@@ -737,23 +735,30 @@ puts(archivo);
 	{
 		if(strchr(buffer, '#')==NULL)
 		{
-			args_assigned = sscanf(buffer, "%*s %s %f %*d %f %f", &spec, &size, &x , &y);
+			args_assigned = sscanf(buffer, "%*s %s %f %*d %lf %lf", &spec, &size, &x , &y);
 			
-			if(size>0.0)
+			if(size>=min_size)
 			{
 				if(x>max_x){max_x=x;}
 				if(y>max_y){max_y=y;}
 				if(x<min_x){min_x=x;}
 				if(y<min_y){min_y=y;}
+				
+				 n++;
 			}
 		}
 	}
 	
 	max_i=(int)((max_x-min_x)/TamParticion)+1;
-	max_j=(int)(max_y-min_y/TamParticion)+1;
+	max_j=(int)((max_y-min_y)/TamParticion)+1;
 	
 	if(max_i<NDX){max_i=NDX;}
 	if(max_j<NDY){max_j=NDY;}
+	
+	double Xpos[n+1];
+	double Ypos[n+1];
+	float Size[n+1];
+	n=0;
 	
 	AlojaMemoria(es,max_i,max_j);
 	ResetEstado(es);
@@ -767,27 +772,55 @@ puts(archivo);
 		
 	while (getline(&buffer, &tam_buffer, datos)!=-1)
     {
-      args_assigned = sscanf(buffer, "%*s %s %f %*d %f %f", &spec, &size, &x , &y);
-      if(args_assigned == 4)
-      {
-		  if(size>0.0)
-		  {
-				  n++;
-				  i=(int)((x-min_x)/TamParticion)+1;
-				  j=(int)((y-min_y)/TamParticion)+1;
-				s[i][j]++;
-				TIPO[i][j]=(int)size;
-				SO[n].i=i;
-				SO[n].j=j;
-				INDICE[i][j]=n;
-				(es->ON)++;  
-			}
-	   }
-	   
+		if(strchr(buffer, '#')==NULL)
+		{
+			  args_assigned = sscanf(buffer, "%s %s %f %*d %lf %lf",&tag, &spec, &size, &x , &y);
+			  if(args_assigned == 5)
+			  {
+				  if(size>=min_size)
+				  {
+						  n++;
+						  i=(int)((x-min_x)/TamParticion)+1;
+						  j=(int)((y-min_y)/TamParticion)+1;
+						if(s[i][j]>0)  //si ya esta ocupado el sitio
+						{
+							if((pow((Xpos[INDICE[i][j]]-x)*100.0,2.0)+pow((Ypos[INDICE[i][j]]-y)*100.0,2.0))<=(pow((Size[INDICE[i][j]]+size)/2.0 , 2.0)))
+							{
+								DR++;
+								if(size>Size[INDICE[i][j]])
+								{
+									TIPO[i][j]=CargaTiposDATOS(spec,map);
+									
+									Xpos[INDICE[i][j]]=x;
+									Ypos[INDICE[i][j]]=y;
+									Size[INDICE[i][j]]=size;
+								}
+							}else{
+								AE++;			
+								//printf("tag: %s en i=%d, j=%d\n",tag,i,j);
+							}
+						}else{
+							s[i][j]=(int)size;
+							TIPO[i][j]=CargaTiposDATOS(spec,map);
+							SO[n].i=i;
+							SO[n].j=j;
+							INDICE[i][j]=n;
+							(es->ON)++; 
+							
+							Xpos[n]=x;
+							Ypos[n]=y;
+							Size[n]=size;
+						}
+					}
+			   }
+		   } 
     }
     
+    GuardaMap(map,nombre);
+    printf("Datos Repetidos %d\nSe hubiera encimado %d arboles!\n",DR,AE);	
+    
     fclose(datos);
-    printf("leidas %d lineas\n",n);
+    printf("leidas %d lineas\n e.ON=%d\n Densidad=%f\n",n,es->ON,(float)(es->ON)/(float)((es->NDX)*(es->NDY)));
     
     if(sscanf(nombre,"T_%d",&Tiempo)==1)
     {
@@ -798,6 +831,59 @@ puts(archivo);
 	
 	printf("Tiempo asignado: T=%d\n",es->T);
 	
+	
+	
 return 1;
 	
+}
+
+int CargaTiposDATOS(char *spec,char map[MAX_TIPO_DATOS][5])
+{
+	int i;
+	for(i=0;i<MAX_TIPO_DATOS;i++)
+	{
+		if (strncmp(map[i], "0000" , 4) != 0)
+		{
+			if (strncmp(spec, map[i], 4) == 0)
+			{
+				return (i+1);
+			}
+		}else{
+			strcpy(map[i],spec);
+			return (i+1);
+		}
+	}
+	
+	return 0;
+}
+
+void InicializaMap(char map[MAX_TIPO_DATOS][5])
+{
+	int i;
+	for(i=0;i<MAX_TIPO_DATOS;i++)
+	{
+		strcpy(map[i], "0000");
+	}
+	return;
+}
+
+void GuardaMap(char map[MAX_TIPO_DATOS][5],char *origen)
+{
+	FILE *fmap=NULL;
+	char archivo[100];
+	
+	sprintf(archivo,"%s_MapTipos",origen);
+	
+	fmap=fopen(archivo,"w");
+	int i;
+	for(i=0;i<MAX_TIPO_DATOS;i++)
+	{
+		if (strncmp(map[i], "0000" , 4) != 0)
+		{
+			fprintf(fmap,"%s -> %d\n", map[i], (i+1));
+			printf("%s -> %d\n", map[i], (i+1));
+		}
+	}
+	fclose(fmap);
+	return;
 }

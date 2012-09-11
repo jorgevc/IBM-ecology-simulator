@@ -1,3 +1,5 @@
+#define MAX_TIPO_DATOS 20
+
 void GuardaEstado(estado *es, FILE *archivo);
 FILE* OpenFile(char *nombre);
 void CreaContenedor(char *nombre);
@@ -22,4 +24,7 @@ void GuardaDist_MP(char *contenedor,char *nombre, Dist_MP *MP_Dist);
 
 void PD_GuardaEstadoEn_MP(char *nombre, estado *es,int id,int NoEnsambles);
 
-int CargaDATOS(char *nombre, estado *es,int NDX, int NDY, float TamParticion);
+int CargaDATOS(char *nombre, estado *es,int NDX, int NDY, double TamParticion); //Usar sin haber alojado memoria antes!!!
+int CargaTiposDATOS(char *spec,char map[MAX_TIPO_DATOS][5]);
+void InicializaMap(char map[MAX_TIPO_DATOS][5]);
+void GuardaMap(char map[MAX_TIPO_DATOS][5], char *origen);

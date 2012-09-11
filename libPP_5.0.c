@@ -17,6 +17,8 @@ static float Max_Metabolic=0.0;
 static double cpu_time_used=0.0;
 static double tiempo2=0.0;
 
+Grupo GRUPO_INI = { 0, 0, 0, -1 }; //TIPO = 0 : Todos los tipos, s = 0 : Todos los tamanos, NEG = 0 : No negacion, Numero de elementos en la ultima vez que se proceso (-1 : no procesado todavia)
+
 void AlojaMemoriaEspecie(int tipo)
 {	
 static int Max_especie=-1;
@@ -1528,7 +1530,7 @@ return;
 void CompactaCorrelacion(Float2D_MP *corr2D, Float1D_MP *corrRadial)
 {
 	int radio;
-	int i_max=corr2D->j_max;
+	int r_max; 
 	int MasDer;
 	int RadioInterior2;
 	int Radio2;
@@ -1539,8 +1541,14 @@ void CompactaCorrelacion(Float2D_MP *corr2D, Float1D_MP *corrRadial)
 	corrRadial->array[0]=corr2D->array[0][0];
 	corrRadial->array[1]=(corr2D->array[1][0] + corr2D->array[0][1])/2.0;
 	
+	if((corr2D->j_max) < (corr2D->i_max))
+	{
+		r_max=corr2D->j_max;
+	}else{
+		r_max=corr2D->i_max;
+	}
 	
-	for(radio=2;radio<=i_max/2;radio++)
+	for(radio=2;radio<=r_max/2;radio++)
 	{
 		Contados=0;
 		RadioInterior2 = (radio-1) * (radio-1);
@@ -1574,7 +1582,7 @@ void CompactaCorrelacion(Float2D_MP *corr2D, Float1D_MP *corrRadial)
 	}
 	corrRadial->NoEnsambles=corr2D->NoEnsambles;
 	corrRadial->T=corr2D->T;
-	corrRadial->i_max = i_max/2;
+	corrRadial->i_max = r_max/2;
 return;
 }
 
@@ -1582,28 +1590,30 @@ void DoblaCorrelacion(Float2D_MP *corr2D)
 {
 	int i,j;
 	
+	int NDX=corr2D->i_max;
 	int NDY=corr2D->j_max;
 	int nyred = ( NDY / 2 ) + 1;
+	int nxred = ( NDX / 2 ) + 1;
 	
-	corr2D->array[NDY][NDY]=corr2D->array[0][0];
+	corr2D->array[NDX][NDY]=corr2D->array[0][0];
 	corr2D->array[0][NDY]=corr2D->array[0][0];
-	corr2D->array[NDY][0]=corr2D->array[0][0];
+	corr2D->array[NDX][0]=corr2D->array[0][0];
 	
-	for(i=0;i<nyred;i++)
+	for(i=0;i<nxred;i++)
 	{
 		for(j=0;j<nyred;j++)
 		{
 			if(i==0)
 			{
-				corr2D->array[NDY][j]=corr2D->array[0][j];
-				corr2D->array[NDY][NDY-j]=corr2D->array[0][NDY-j];
+				corr2D->array[NDX][j]=corr2D->array[0][j];
+				corr2D->array[NDX][NDY-j]=corr2D->array[0][NDY-j];
 			}
 			if(j==0)
 			{
 				corr2D->array[i][NDY]=corr2D->array[i][0];
-				corr2D->array[NDY-i][NDY]=corr2D->array[NDY-i][0];
+				corr2D->array[NDX-i][NDY]=corr2D->array[NDX-i][0];
 			}
-				corr2D->array[i][j]=(corr2D->array[i][j] + corr2D->array[NDY-i][j] + corr2D->array[i][NDY-j] + corr2D->array[NDY-i][NDY-j])/4.0;
+				corr2D->array[i][j]=(corr2D->array[i][j] + corr2D->array[NDX-i][j] + corr2D->array[i][NDY-j] + corr2D->array[NDX-i][NDY-j])/4.0;
 		}
 	}
 	
@@ -1654,7 +1664,7 @@ plan2 = fftw_plan_dft_c2r_2d ( NDX, NDY, out1, in1, FFTW_ESTIMATE );
 			}
 			if(TipoDestino < 0)
 			{
-				if(es[n].TIPO[i+1][j+1] != TipoDestino && es[n].TIPO[i+1][j+1] != 0)
+				if(es[n].TIPO[i+1][j+1] != (-1*TipoDestino) && es[n].TIPO[i+1][j+1] != 0)
 				{
 					in2[i*NDY + j] = (double)es[n].s[i+1][j+1];
 					on2++;
@@ -1707,7 +1717,8 @@ plan2 = fftw_plan_dft_c2r_2d ( NDX, NDY, out1, in1, FFTW_ESTIMATE );
 		  
 		  #pragma omp atomic
 		  correlacion->NoEnsambles++;
-		  		 
+		
+		  correlacion->i_max=NDX;		 
 		  correlacion->j_max=NDY;
 		
 	  }
@@ -1732,6 +1743,310 @@ fftw_free(out2);
 return;
 }
 
+void CFFT_Univ_MP(estado *es, CorrDescriptor *Especifica, Float2D_MP *correlacion, Grupo *TipoOrigen, Grupo *TipoDestino)
+{
+fftw_complex *out1;
+fftw_complex *out2;
+fftw_plan p1, p2, plan2;
+int NDX = es[0].NDX;
+int NDY = es[0].NDY;
+double *in1;
+double *in2;
+double Re,Im;
+int i,j,n,on1,on2,on0, Muestra, ind;
+int nyh = ( NDY / 2 ) + 1;
+sitio SO[es[0].ON+1000];
+
+int MeanSquare=Especifica->MeanSquare;
+int NoEnsambles=Especifica->NoEnsambles;
+int NoMuestras=Especifica->NoMuestras;
+int MuestraIni;
+int MuestraFin;
+if (Especifica->Muestra > 0)	//Si se especifica Muestra, entonces solo se analiza esa muestra
+{
+	MuestraIni=Especifica->Muestra;
+	MuestraFin=Especifica->Muestra;
+}else{		// Valor de 0 (o negativo) en Especifica.Muestra analiza todas las muestras
+	MuestraIni=1;
+	MuestraFin=Especifica->NoMuestras;
+}
+
+
+#pragma omp critical
+{
+in1 = fftw_alloc_real( sizeof ( double ) * NDX * NDY );
+in2 = fftw_alloc_real( sizeof ( double ) * NDX * NDY );
+
+out1 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NDX * nyh);
+out2 = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * NDX * nyh);
+
+p1 = fftw_plan_dft_r2c_2d ( NDX, NDY, in1, out1, FFTW_ESTIMATE );
+p2 = fftw_plan_dft_r2c_2d ( NDX, NDY, in2, out2, FFTW_ESTIMATE );
+plan2 = fftw_plan_dft_c2r_2d ( NDX, NDY, out1, in1, FFTW_ESTIMATE );
+}
+
+ for(n=0;n<NoEnsambles;n++)
+ {
+	 on1=0;
+	 on2=0;
+	 on0=0;
+	 
+	 for ( i = 0; i < NDX; i++ )
+	  {
+		for ( j = 0; j < NDY; j++ )
+		{
+			if(TipoOrigen->TIPO!=0) //se sepecifico tipo
+			{
+				if(TipoOrigen->s!=0) //se especifico tamano
+				{
+					if(TipoOrigen->NEG!=1) //no es el negativo
+					{
+						if(es[n].TIPO[i+1][j+1]==TipoOrigen->TIPO && es[n].s[i+1][j+1]==TipoOrigen->s)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]>0 && es[n].TIPO[i+1][j+1]!=TipoOrigen->TIPO && es[n].s[i+1][j+1]!=TipoOrigen->s)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}
+				}else{  //todos los tamanos
+					if(TipoOrigen->NEG!=1) //no es el negativo
+					{
+						if(es[n].s[i+1][j+1]>0 && es[n].TIPO[i+1][j+1]==TipoOrigen->TIPO)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]>0 && es[n].TIPO[i+1][j+1]!=TipoOrigen->TIPO)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}
+				}
+			}else{ //todos los tipos
+				if(TipoOrigen->s!=0) //se especifico tamano
+				{
+					if(TipoOrigen->NEG!=1) //no es el negativo
+					{
+						if(es[n].s[i+1][j+1]==TipoOrigen->s)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]>0 && es[n].s[i+1][j+1]!=TipoOrigen->s)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}
+				}else{  //todos los tamanos
+					if(TipoOrigen->NEG!=1) //no es el negativo
+					{
+						if(es[n].s[i+1][j+1]>0)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]<1)
+						{
+							on0++;
+							SO[on0].i=i;
+							SO[on0].j=j;
+						}
+					}
+				}
+			}
+			//--------------------
+			if(TipoDestino->TIPO!=0) //se sepecifico tipo
+			{
+				if(TipoDestino->s!=0) //se especifico tamano
+				{
+					if(TipoDestino->NEG!=1) //no es el negativo
+					{
+						if(es[n].TIPO[i+1][j+1]==TipoDestino->TIPO && es[n].s[i+1][j+1]==TipoDestino->s)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]>0 && es[n].TIPO[i+1][j+1]!=TipoDestino->TIPO && es[n].s[i+1][j+1]!=TipoDestino->s)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}
+				}else{  //todos los tamanos
+					if(TipoDestino->NEG!=1) //no es el negativo
+					{
+						if(es[n].s[i+1][j+1]>0 && es[n].TIPO[i+1][j+1]==TipoDestino->TIPO)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]>0 && es[n].TIPO[i+1][j+1]!=TipoDestino->TIPO)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}
+				}
+			}else{ //todos los tipos
+				if(TipoDestino->s!=0) //se especifico tamano
+				{
+					if(TipoDestino->NEG!=1) //no es el negativo
+					{
+						if(es[n].s[i+1][j+1]==TipoDestino->s)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]>0 && es[n].s[i+1][j+1]!=TipoDestino->s)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}
+				}else{  //todos los tamanos
+					if(TipoDestino->NEG!=1) //no es el negativo
+					{
+						if(es[n].s[i+1][j+1]>0)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}else{ //el negativo
+						if(es[n].s[i+1][j+1]<1)
+						{
+							in2[i*NDY + j] = 1.0;
+							on2++;
+						}else{
+							in2[i*NDY + j] = 0.0;
+						}
+					}
+				}
+			}
+					
+		}  
+	  }
+	  
+	  
+	  
+	  if(MuestraIni != MuestraFin && MuestraFin>on0)
+	  {
+		  MuestraFin=on0;
+		  printf("No maximo de muestras posibles = %d !\n",on0);
+	  }
+	  
+	for(Muestra=MuestraIni;Muestra<=MuestraFin;Muestra++)
+	{
+		on1=0;
+		for(i=0;i<(NDX*NDY);i++)
+		{
+			in1[i]=0.0;
+		}
+		for(ind=0;(ind*NoMuestras + Muestra)<=on0;ind++)
+		{
+			in1[SO[ind*NoMuestras + Muestra].i*NDY + SO[ind*NoMuestras + Muestra].j]=1.0;
+			on1++;
+		}
+
+		if(on1>0 && on2>0)
+		{
+			
+			fftw_execute(p1); 
+			fftw_execute(p2);
+			
+			 for ( i = 0; i < NDX; i++ )
+			  {
+				for ( j = 0; j < nyh; j++ )
+				{
+					Re=out1[i*nyh + j][0]*out2[i*nyh + j][0] + out1[i*nyh + j][1]*out2[i*nyh + j][1];
+					Im=out1[i*nyh + j][1]*out2[i*nyh + j][0] - out1[i*nyh + j][0]*out2[i*nyh + j][1];
+				  out1[i*nyh + j][0] = Re;
+				  out1[i*nyh + j][1] = Im;
+				}
+			  }
+				
+			 fftw_execute ( plan2 );
+			 
+			 for ( i = 0; i < NDX; i++ )
+			  {
+				for ( j = 0; j < NDY; j++ )
+				{
+					 in1[i*NDY + j]/=(double)on1;
+					 in1[i*NDY + j]/=(double)on2;
+					 #pragma omp atomic
+						correlacion[0].array[i][j]+=in1[i*NDY + j];
+						
+					if(MeanSquare==1)
+					{
+						#pragma omp atomic
+						correlacion[1].array[i][j]+=pow(in1[i*NDY + j],2.0);
+					}
+				}
+			  }
+		  
+		  #pragma omp atomic
+		  correlacion->NoEnsambles++;
+		
+		  correlacion->i_max=NDX;		 
+		  correlacion->j_max=NDY;
+		
+		}
+	}
+	  
+  }
+ 
+ correlacion->T=es[0].T;
+ TipoOrigen->on=on0;
+ TipoDestino->on=on2;
+ 
+ #pragma omp critical
+{
+fftw_destroy_plan(p1);
+fftw_destroy_plan(p2);
+fftw_destroy_plan(plan2);
+
+fftw_free(in1);
+fftw_free(in2);
+fftw_free(out1);
+fftw_free(out2);
+
+}
+
+return;
+}
 
 float Integra(Float1D_MP *Funcion, int inicial, int final)
 {
