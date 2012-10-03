@@ -547,7 +547,7 @@ return;
 void PD_GuardaEstadoEn_MP(char *nombre, estado *es,int id,int NoEnsambles)
 {
 	char paso[15];
-	char archivo[300];
+	char archivo[350];
 	char base[50];
 	FILE *datos;
 	char dir[250];

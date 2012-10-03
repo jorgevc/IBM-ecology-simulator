@@ -12,6 +12,7 @@ Copyright 2012 Jorge Velazquez
 #include "ControlDinamico.h"
 
 main(){	
+	
 //int clave=323;
 //int *servicio = activa_escucha(clave);
 //int *servicio;
@@ -29,37 +30,38 @@ float Birth1= 1.0;
 float Coagulation1; //Brown usa: 0.00002; 
 float CoaIntra1= 0.2; //Modelo J-C 0.0008
 float Dead1= 0.4;
-int RadioBirth1= 5;
-int RadioCoa1= 1;
-int RadioCoaIntra1= 2;  //Modelo Heteromyopia 20
+int RadioBirth1= 2;
+int RadioCoa1= 4;
+int RadioCoaIntra1= 4;  //Modelo Heteromyopia 20
 
 
 float Birth2= 1.0;
 float Coagulation2= 0.0; //Brown usa: 0.00002;
 float CoaIntra2=0.2;
 float Dead2;
-int RadioBirth2= 15;
-int RadioCoa2= 1;
-int RadioCoaIntra2= 2;
+int RadioBirth2= 2;
+int RadioCoa2= 10;
+int RadioCoaIntra2= 10;
 
 
 omp_set_num_threads(4);
 ////////////////////////////Termina Inicializa de paremtros de la simulacion
 /////////////////////////////////////Prepara CONTENEDOR para escribir DATOS:
 int T_st;
+float Rho_A;
 
 Float2D_MP MP_RhoVsT_1;
 int NoEspecies=CantidadEspecies;		
 		InicializaFloat2D_MP(&MP_RhoVsT_1, T_max, CantidadEspecies, 0);
 		
-//Float1D_MP MP_Correlacion_1G;
-		//InicializaFloat1D_MP(&MP_Correlacion_1G, NDX);
+Float1D_MP MP_Correlacion_1G;
+		InicializaFloat1D_MP(&MP_Correlacion_1G, NDX);
 		
-//Float1D_MP MP_Correlacion_2G;
-		//InicializaFloat1D_MP(&MP_Correlacion_2G, NDX);
+Float1D_MP MP_Correlacion_2G;
+		InicializaFloat1D_MP(&MP_Correlacion_2G, NDX);
 
-//Float1D_MP MP_Correlacion_12G;
-		//InicializaFloat1D_MP(&MP_Correlacion_12G, NDX);
+Float1D_MP MP_Correlacion_12G;
+		InicializaFloat1D_MP(&MP_Correlacion_12G, NDX);
 		
 		//float Valor1;
 		//float Valor2;
@@ -67,7 +69,7 @@ int NoEspecies=CantidadEspecies;
 	
 
 char contenedor[200];
-	sprintf(contenedor,"PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=5:15,RC=1:1,RCI=2:2)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
+	sprintf(contenedor,"DATOS/PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=2:2,RC=4:10,RCI=4:10)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
 	//sprintf(contenedor,"BrwRemMPHM-2_(B,D,C,RB,RC)@(2.000,1.000,0.000,10,5)_(NDX,Tmax)@(1000,150)");
 	CreaContenedor(contenedor);
 	
@@ -78,14 +80,14 @@ char contenedorLec[150];
 
 
 
-char contenedorCompleto[300];
+char contenedorCompleto[320];
 
-FILE *pD;
-	char NombrePD[200];
-	sprintf(NombrePD,"DATOS/%s/PD",contenedor);
-	pD=fopen(NombrePD, "a");
-	fprintf(pD,"#d2 c21 Rho_1 Rho_2\n"); 
-	fclose(pD);
+//FILE *pD;
+	//char NombrePD[200];
+	//sprintf(NombrePD,"%s/PD",contenedor);
+	//pD=fopen(NombrePD, "a");
+	//fprintf(pD,"#d2 c21 Rho_1 Rho_2 time\n"); 
+	//fclose(pD);
 	
 	int t;
 //char NombrePD2[200];
@@ -101,12 +103,12 @@ FILE *pD;
 //{
 // for(RadioBirth2=3;RadioBirth2<=3;RadioBirth2+=1)
 // {
-  for(Dead2=0.35;Dead2<0.6;Dead2+=0.01)
+  for(Dead2=0.31;Dead2<0.5;Dead2+=1.0)
   {
-	  pD=fopen(NombrePD, "a");
-				fprintf(pD,"\n"); 
-				fclose(pD);
-	for(Coagulation1=0.0;Coagulation1<0.6;Coagulation1+=0.01)
+	  //pD=fopen(NombrePD, "a");
+				//fprintf(pD,"\n"); 
+				//fclose(pD);
+	for(Coagulation1=0.23;Coagulation1<0.6;Coagulation1+=1.01)
 	{
 		
 				
@@ -117,9 +119,9 @@ FILE *pD;
 			SetSpecie2(1, Birth1, Coagulation1, CoaIntra1, Dead1, RadioBirth1, RadioCoa1, RadioCoaIntra1);
 			SetSpecie2(2, Birth2, Coagulation2, CoaIntra2, Dead2, RadioBirth2, RadioCoa2, RadioCoaIntra2);
 			
-			sprintf(contenedorCompleto,"%s/(d2=%1.2f,c21=%1.2f)",contenedor,Dead2,Coagulation1);
+			sprintf(contenedorCompleto,"%s/(d2=%1.2f,c21=%1.2f)*",contenedor,Dead2,Coagulation1);
 			CreaContenedor(contenedorCompleto);
-			
+	
 			ResetFloat2D_MP(&MP_RhoVsT_1);
 			
 			
@@ -161,38 +163,38 @@ FILE *pD;
 
 
 				
-			/////////////////////////////////////Termina Estado INICIAL
-			//////////////////////////Prepara Contenedor en Memoria de cada proceso Para Mejorar rendimiento (optimizar el uso de cache de cada procesador)
+			///////////////////////////////////////Termina Estado INICIAL
+			////////////////////////////Prepara Contenedor en Memoria de cada proceso Para Mejorar rendimiento (optimizar el uso de cache de cada procesador)
 
 				Float2D_MP MP_RhoVsT;	
 						InicializaFloat2D_MP(&MP_RhoVsT, T_max, NoEspecies, MaxPar);
 						
-			//Float2D_MP MP_Corr2D_1;
-			//InicializaFloat2D_MP(&MP_Corr2D_1, NDX, NDY, 0);
+			Float2D_MP MP_Corr2D_1;
+			InicializaFloat2D_MP(&MP_Corr2D_1, NDX, NDY, 0);
 			
-			//Float2D_MP MP_Corr2D_2;
-			//InicializaFloat2D_MP(&MP_Corr2D_2, NDX, NDY, 0);
+			Float2D_MP MP_Corr2D_2;
+			InicializaFloat2D_MP(&MP_Corr2D_2, NDX, NDY, 0);
 			
-			//Float2D_MP MP_Corr2D_12;
-			//InicializaFloat2D_MP(&MP_Corr2D_12, NDX, NDY, 0);
+			Float2D_MP MP_Corr2D_12;
+			InicializaFloat2D_MP(&MP_Corr2D_12, NDX, NDY, 0);
 			
-			//Float1D_MP MP_Correlacion_1;
-			//InicializaFloat1D_MP(&MP_Correlacion_1, NDX);
+			Float1D_MP MP_Correlacion_1;
+			InicializaFloat1D_MP(&MP_Correlacion_1, NDX);
 			
-			//Float1D_MP MP_Correlacion_2;
-			//InicializaFloat1D_MP(&MP_Correlacion_2, NDX);
+			Float1D_MP MP_Correlacion_2;
+			InicializaFloat1D_MP(&MP_Correlacion_2, NDX);
 			
-			//Float1D_MP MP_Correlacion_12;
-			//InicializaFloat1D_MP(&MP_Correlacion_12, NDX);
+			Float1D_MP MP_Correlacion_12;
+			InicializaFloat1D_MP(&MP_Correlacion_12, NDX);
 								
-			/////////////////////////////////Termina prepara Contenedor MEMORIA de cada PROCESO
+			///////////////////////////////////Termina prepara Contenedor MEMORIA de cada PROCESO
 
-					//for(Par=0;Par<MaxPar;Par++)
-					//{
-						//ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
-					//}
+					////for(Par=0;Par<MaxPar;Par++)
+					////{
+						////ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
+					////}
 					
-			//////////////////////////////Barrido Monte CARLO:
+			////////////////////////////////Barrido Monte CARLO:
 				int i;
 				for(i=0;i<T_max;i++)
 				{
@@ -266,25 +268,26 @@ FILE *pD;
 
 				}
 				
-			//////////////////////////////Termina Monte CARLO
-			if(i==T_max)
-			{
-				for(Par=0;Par<MaxPar;Par++)
-				{
-					ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
-				}
-				#pragma omp master
-				{
-					T_st=T_max;
-				}
-			}
-			#pragma omp barrier
-			#pragma omp single
-			{
-				ResetFloat2D_MP(&MP_RhoVsT_1);
-			}
+			////////////////////////////////Termina Monte CARLO
+			//if(i==T_max)
+			//{
+				//for(Par=0;Par<MaxPar;Par++)
+				//{
+					//ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
+				//}
+				//#pragma omp master
+				//{
+					//T_st=T_max;
+				//}
+			//}
+			//#pragma omp barrier
+			//#pragma omp single
+			//{
+				//ResetFloat2D_MP(&MP_RhoVsT_1);
+			//}
 			
-				SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
+				//SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
+				
 				//#pragma omp master
 				//{
 					//PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
@@ -293,37 +296,37 @@ FILE *pD;
 			//Correlacion
 			
 			
-			//ResetFloat2D_MP(&MP_Corr2D_1);	
-			//ResetFloat2D_MP(&MP_Corr2D_2);
-			//ResetFloat2D_MP(&MP_Corr2D_12);	
+			ResetFloat2D_MP(&MP_Corr2D_1);	
+			ResetFloat2D_MP(&MP_Corr2D_2);
+			ResetFloat2D_MP(&MP_Corr2D_12);	
 			
-			//ResetFloat1D_MP(&MP_Correlacion_1);
-			//ResetFloat1D_MP(&MP_Correlacion_2);
-			//ResetFloat1D_MP(&MP_Correlacion_12);
+			ResetFloat1D_MP(&MP_Correlacion_1);
+			ResetFloat1D_MP(&MP_Correlacion_2);
+			ResetFloat1D_MP(&MP_Correlacion_12);
 									
-			//ResetFloat1D_MP(&MP_Correlacion_1G);
-			//ResetFloat1D_MP(&MP_Correlacion_2G);
-			//ResetFloat1D_MP(&MP_Correlacion_12G);
+			ResetFloat1D_MP(&MP_Correlacion_1G);
+			ResetFloat1D_MP(&MP_Correlacion_2G);
+			ResetFloat1D_MP(&MP_Correlacion_12G);
 			
-						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_1, 1, 1);
-						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_2, 2, 2);
-						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_12, 1, 2);
+						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_1, 1, 1);
+						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_2, 2, 2);
+						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_12, 1, 2);
 						
-						//if(MP_Corr2D_1.NoEnsambles > 2)
-						//{
-							//CompactaCorrelacion(&MP_Corr2D_1, &MP_Correlacion_1);
-							//SumaFloat1D_MP(&MP_Correlacion_1,&MP_Correlacion_1G);
-						//}
-						//if(MP_Corr2D_2.NoEnsambles > 2)
-						//{
-							//CompactaCorrelacion(&MP_Corr2D_2, &MP_Correlacion_2);
-							//SumaFloat1D_MP(&MP_Correlacion_2,&MP_Correlacion_2G);
-						//}
-						//if(MP_Corr2D_12.NoEnsambles > 2)
-						//{
-							//CompactaCorrelacion(&MP_Corr2D_12, &MP_Correlacion_12);
-							//SumaFloat1D_MP(&MP_Correlacion_12,&MP_Correlacion_12G);
-						//}
+						if(MP_Corr2D_1.NoEnsambles > 2)
+						{
+							CompactaCorrelacion(&MP_Corr2D_1, &MP_Correlacion_1);
+							SumaFloat1D_MP(&MP_Correlacion_1,&MP_Correlacion_1G);
+						}
+						if(MP_Corr2D_2.NoEnsambles > 2)
+						{
+							CompactaCorrelacion(&MP_Corr2D_2, &MP_Correlacion_2);
+							SumaFloat1D_MP(&MP_Correlacion_2,&MP_Correlacion_2G);
+						}
+						if(MP_Corr2D_12.NoEnsambles > 2)
+						{
+							CompactaCorrelacion(&MP_Corr2D_12, &MP_Correlacion_12);
+							SumaFloat1D_MP(&MP_Correlacion_12,&MP_Correlacion_12G);
+						}
 						
 						//Libera Memoria
 						for(Par=0;Par<MaxPar;Par++)
@@ -331,19 +334,20 @@ FILE *pD;
 							LiberaMemoria(&e[Par]);
 						}
 						LiberaMemoriaFloat2D_MP(&MP_RhoVsT);	
-						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_1);
-						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_2);	
-						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_12);
 						
-						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_1);
-						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_2);
-						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_12);
+						LiberaMemoriaFloat2D_MP(&MP_Corr2D_1);
+						LiberaMemoriaFloat2D_MP(&MP_Corr2D_2);	
+						LiberaMemoriaFloat2D_MP(&MP_Corr2D_12);
+						
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_1);
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_2);
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_12);
 
 			}	////////////////////////////////////////////////////////////////////TERMINA PARALLEL
 
-					//GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);
-					//GuardaCorrelacion_MP(contenedorCompleto, "2-2" , &MP_Correlacion_2G);
-					//GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
+					GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);
+					GuardaCorrelacion_MP(contenedorCompleto, "2-2" , &MP_Correlacion_2G);
+					GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
 					//Valor1=Integra(&MP_Correlacion_1G,1,24); 
 					//Valor2=Integra(&MP_Correlacion_2G,1,24); 
 					//Valor3=Integra(&MP_Correlacion_12G,1,24); 
@@ -353,14 +357,18 @@ FILE *pD;
 				//fclose(pD);
 			
 			//GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,NULL);	
-				if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
-				{
-					pD=fopen(NombrePD, "a");
-					fprintf(pD,"%f %f %f %f %d\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles,T_st); 
-					fclose(pD);
-				}
+				//if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
+				//{
+					//pD=fopen(NombrePD, "a");
+					//fprintf(pD,"%f %f %f %f %d\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles,T_st); 
+					//fclose(pD);
+				//}
 				
-
+				//if(fabs(MP_RhoVsT_1.array[T_st][1] - Rho_A) < 2.0*0.012*20.0)
+				//{
+					//Coagulation1+=0.01;
+				//} 
+				//Rho_A=MP_RhoVsT_1.array[T_st][1];
 	
 	}
   
@@ -369,5 +377,10 @@ FILE *pD;
 //}
 //cierra_escucha();
 
+						LiberaMemoriaFloat2D_MP(&MP_RhoVsT_1);
+
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_1G);
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_2G);
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_12G);
 return;
 }
