@@ -9,14 +9,9 @@ Copyright 2012 Jorge Velazquez
 #include "libPP_5.0.h"
 #include "EntSalArb_MP.h"
 #include "GNA.h"
-#include "ControlDinamico.h"
 
 main(){	
 	
-//int clave=323;
-//int *servicio = activa_escucha(clave);
-//int *servicio;
-//*servicio=0;
 ///////////////////////////Inicializa parametros de la simulacion
 int NDX=150;
 int NDY=NDX;
@@ -30,16 +25,16 @@ float Birth1= 1.0;
 float Coagulation1; //Brown usa: 0.00002; 
 float CoaIntra1= 0.2; //Modelo J-C 0.0008
 float Dead1= 0.4;
-int RadioBirth1= 2;
-int RadioCoa1= 4;
-int RadioCoaIntra1= 4;  //Modelo Heteromyopia 20
+int RadioBirth1= 1;
+int RadioCoa1= 10;
+int RadioCoaIntra1= 10;  //Modelo Heteromyopia 20
 
 
 float Birth2= 1.0;
 float Coagulation2= 0.0; //Brown usa: 0.00002;
 float CoaIntra2=0.2;
 float Dead2;
-int RadioBirth2= 2;
+int RadioBirth2= 1;
 int RadioCoa2= 10;
 int RadioCoaIntra2= 10;
 
@@ -63,58 +58,34 @@ Float1D_MP MP_Correlacion_2G;
 Float1D_MP MP_Correlacion_12G;
 		InicializaFloat1D_MP(&MP_Correlacion_12G, NDX);
 		
-		//float Valor1;
-		//float Valor2;
-		//float Valor3;
+char contenedor[300];
 	
-
-char contenedor[200];
-	sprintf(contenedor,"DATOS/PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=2:2,RC=4:10,RCI=4:10)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,NDX,T_max);
-	//sprintf(contenedor,"BrwRemMPHM-2_(B,D,C,RB,RC)@(2.000,1.000,0.000,10,5)_(NDX,Tmax)@(1000,150)");
-	CreaContenedor(contenedor);
-	
-char contenedorLec[150];	
-	//sprintf(contenedorLec,"BrwRemNich0MP_(B,D,C,RB,RC)@(%1.3f,%1.3f,%1.3f,%d,%d)_(NDX,Tmax)@(%d,%d)",Birth1,Dead1,Coagulation1,RadioBirth1,RadioCoa1,NDX,T_max);
-	sprintf(contenedorLec,contenedor);
+FILE *pD;
+char NombrePD[200];
+char contenedorCompleto[320];
 /////////////////////////////////////Termina Prepara CONTENEDOR para escribir DATOS
 
+RadioCoa1=3;
+RadioCoaIntra1=3;
 
-
-char contenedorCompleto[320];
-
-//FILE *pD;
-	//char NombrePD[200];
+RadioCoa2=10;
+RadioCoaIntra2=10;
+	
+	sprintf(contenedor,"DATOS2/PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=1:1,RC=%d:%d,RCI=%d:%d)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,RadioCoa1,RadioCoa2,RadioCoaIntra1,RadioCoaIntra2,NDX,T_max);
+	CreaContenedor(contenedor);
+	
 	//sprintf(NombrePD,"%s/PD",contenedor);
 	//pD=fopen(NombrePD, "a");
 	//fprintf(pD,"#d2 c21 Rho_1 Rho_2 time\n"); 
 	//fclose(pD);
 	
-	int t;
-//char NombrePD2[200];
-	//sprintf(NombrePD2,"DATOS/%s/CorrPD",contenedor);
-	//pD=fopen(NombrePD2, "a");
-	//fprintf(pD,"#Dead2 Dead1 Coa21 Coa1 Coa2 1-1 2-2 1-2  The values are the logaritmic Integral of the corresponding correlation function from 1 to 200\n"); 
-	//fclose(pD);
-	
-//	char NombrePDTemp[200];
-
-
-//for(RadioBirth1=3;RadioBirth1<=3;RadioBirth1+=1)
-//{
-// for(RadioBirth2=3;RadioBirth2<=3;RadioBirth2+=1)
-// {
-  for(Dead2=0.31;Dead2<0.5;Dead2+=1.0)
+  for(Dead2=0.31;Dead2<0.52;Dead2+=1.01)
   {
-	  //pD=fopen(NombrePD, "a");
-				//fprintf(pD,"\n"); 
-				//fclose(pD);
-	for(Coagulation1=0.23;Coagulation1<0.6;Coagulation1+=1.01)
-	{
-		
-				
-				//pD=fopen(NombrePD2, "a");
-				//fprintf(pD,"\n"); 
-				//fclose(pD);			
+	  		//pD=fopen(NombrePD, "a");
+			//fprintf(pD,"\n"); 
+			//fclose(pD);
+	for(Coagulation1=0.47;Coagulation1<0.52;Coagulation1+=1.01)
+	{			
 			
 			SetSpecie2(1, Birth1, Coagulation1, CoaIntra1, Dead1, RadioBirth1, RadioCoa1, RadioCoaIntra1);
 			SetSpecie2(2, Birth2, Coagulation2, CoaIntra2, Dead2, RadioBirth2, RadioCoa2, RadioCoaIntra2);
@@ -125,10 +96,6 @@ char contenedorCompleto[320];
 			ResetFloat2D_MP(&MP_RhoVsT_1);
 			
 			
-		//sprintf(NombrePDTemp,"DATOS/%s/IntCorrVsT",contenedorCompleto);
-		//pD=fopen(NombrePDTemp, "a");
-		//fprintf(pD,"#T LogIntCorr_1-2\n"); 
-		//fclose(pD);
 			///////////////////////////////////// INICIA PARALLEL
 
 			#pragma omp parallel			///////Estado INICIAL:
@@ -229,12 +196,9 @@ char contenedorCompleto[320];
 						}
 					}
 					
-					
-				
 						if((i-(i/500)*500)==499)    //Inicializa cada 500 pasos
 						{
 							init_JKISS();
-							//printf("Se ha reinicializado JKISS (c/500pasos) paso:%d, threath:%d \n",i,id);
 						}
 		
 						
@@ -259,41 +223,36 @@ char contenedorCompleto[320];
 								//{
 									//GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
 								//}
-								//Valor1=Integra(&MP_Correlacion_12G,1,24); 
-								//pD=fopen(NombrePDTemp, "a");
-								//fprintf(pD,"%d %f \n",i, Valor1); 
-								//fclose(pD);
 							//}
 						//}
-
 				}
 				
-			////////////////////////////////Termina Monte CARLO
-			//if(i==T_max)
-			//{
-				//for(Par=0;Par<MaxPar;Par++)
-				//{
-					//ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
-				//}
-				//#pragma omp master
-				//{
-					//T_st=T_max;
-				//}
-			//}
-			//#pragma omp barrier
-			//#pragma omp single
-			//{
-				//ResetFloat2D_MP(&MP_RhoVsT_1);
-			//}
-			
-				//SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
 				
-				//#pragma omp master
-				//{
-					//PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
-				//}
+			////////////////////////////////Termina Monte CARLO
+			if(i==T_max)
+			{
+				for(Par=0;Par<MaxPar;Par++)
+				{
+					ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);
+				}
+				#pragma omp master
+				{
+					T_st=T_max;
+				}
+			}
+			#pragma omp barrier
+			#pragma omp single
+			{
+				ResetFloat2D_MP(&MP_RhoVsT_1);
+			}
 			
-			//Correlacion
+				SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
+				
+				#pragma omp master
+				{
+					PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
+				}
+			////////Correlacion
 			
 			
 			ResetFloat2D_MP(&MP_Corr2D_1);	
@@ -348,13 +307,6 @@ char contenedorCompleto[320];
 					GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);
 					GuardaCorrelacion_MP(contenedorCompleto, "2-2" , &MP_Correlacion_2G);
 					GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
-					//Valor1=Integra(&MP_Correlacion_1G,1,24); 
-					//Valor2=Integra(&MP_Correlacion_2G,1,24); 
-					//Valor3=Integra(&MP_Correlacion_12G,1,24); 
-
-				//pD=fopen(NombrePD2, "a");
-				//fprintf(pD,"%1.2f %1.2f %1.2f %1.2f %1.2f %f %f %f\n",Dead2,Dead1,Coagulation1,CoaIntra1,CoaIntra2, Valor1, Valor2, Valor3); 
-				//fclose(pD);
 			
 			//GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,NULL);	
 				//if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
@@ -364,23 +316,18 @@ char contenedorCompleto[320];
 					//fclose(pD);
 				//}
 				
-				//if(fabs(MP_RhoVsT_1.array[T_st][1] - Rho_A) < 2.0*0.012*20.0)
-				//{
-					//Coagulation1+=0.01;
-				//} 
-				//Rho_A=MP_RhoVsT_1.array[T_st][1];
+				if(fabs(MP_RhoVsT_1.array[T_st][1] - Rho_A) < 2.0*0.01*20.0)
+				{
+					Coagulation1+=0.01;
+				} 
+				Rho_A=MP_RhoVsT_1.array[T_st][1];
 	
 	}
   
   }
-// }
-//}
-//cierra_escucha();
-
+ 
 						LiberaMemoriaFloat2D_MP(&MP_RhoVsT_1);
 
-						LiberaMemoriaFloat1D_MP(&MP_Correlacion_1G);
-						LiberaMemoriaFloat1D_MP(&MP_Correlacion_2G);
-						LiberaMemoriaFloat1D_MP(&MP_Correlacion_12G);
+						
 return;
 }

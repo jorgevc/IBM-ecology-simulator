@@ -281,7 +281,7 @@ void GuardaCorrelacion_MP(char *contenedor, char *prefix, Float1D_MP *corr)
 	int r;
 	
 	sprintf(archivo,"%s/%s_CorrT_%03d",contenedor,prefix,T);
-	
+
 	arch=fopen(archivo,"w");
 	if(arch==NULL){puts("No se pudo abrir archivo");}
 	fputs("#r g\n",arch);
@@ -525,16 +525,12 @@ int NDX = es->NDX;
 int NDY = es->NDY;
 int ON = es->ON;
 
-char dir[250]="DATOS/";
+char dir[250];
 
-sprintf(paso,"/T_%03d",T);
-strcat(dir,nombre);
-strcat(dir,paso);
+sprintf(dir,"%s/T_%03d",nombre,T);
 mkdir(dir,(S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH));
 
-sprintf(base,"/P_%d_Ens_%d",id,ensamble);
-strcpy(archivo,dir);
-strcat(archivo,base);
+sprintf(archivo,"%s/P_%d_Ens_%d",dir,id,ensamble);
 
 	datos=fopen(archivo,"w");
 	fputs("# x   y   tipo\n",datos);
@@ -544,32 +540,28 @@ strcat(archivo,base);
 return;
 }
 
-void PD_GuardaEstadoEn_MP(char *nombre, estado *es,int id,int NoEnsambles)
+void PD_GuardaEstadoEn_MP(char *contenedor, estado *es,int id,int NoEnsambles)
 {
 	char paso[15];
 	char archivo[350];
-	char base[50];
+	char dir[350];
 	FILE *datos;
-	char dir[250];
 	int T;
 	int Tglobal=-1;
-	
-	sprintf(dir,"DATOS/%s",nombre);
 
 int Par;
 for(Par=0;Par<NoEnsambles;Par++)
 {
 	T=es[Par].T;
 	
-	sprintf(archivo,"%s/T_%03d",dir,T);
+	sprintf(dir,"%s/T_%03d",contenedor,T);
 	if(T!=Tglobal)
 	{
-		mkdir(archivo,(S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH));
+		mkdir(dir,(S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH));
 		Tglobal=T;
 	}
 
-	sprintf(base,"/P_%d_Ens_%d",id,Par);
-	strcat(archivo,base);
+	sprintf(archivo,"%s/P_%d_Ens_%d",dir,id,Par);
 
 		datos=fopen(archivo,"w");
 		fputs("# x   y   tipo\n",datos);
