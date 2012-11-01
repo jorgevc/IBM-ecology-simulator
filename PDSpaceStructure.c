@@ -31,7 +31,7 @@ int RadioCoaIntra1= 10;  //Modelo Heteromyopia 20
 
 
 float Birth2= 1.0;
-float Coagulation2= 0.0; //Brown usa: 0.00002;
+float Coagulation2= 0.2; //Brown usa: 0.00002;
 float CoaIntra2=0.2;
 float Dead2;
 int RadioBirth2= 1;
@@ -65,8 +65,8 @@ char NombrePD[200];
 char contenedorCompleto[320];
 /////////////////////////////////////Termina Prepara CONTENEDOR para escribir DATOS
 
-RadioCoa1=3;
-RadioCoaIntra1=3;
+RadioCoa1=10;
+RadioCoaIntra1=10;
 
 RadioCoa2=10;
 RadioCoaIntra2=10;
@@ -74,24 +74,24 @@ RadioCoaIntra2=10;
 	sprintf(contenedor,"DATOS2/PD(0.2:0.2)_(B=1:1,D=%1.2f:d2,C=c21:%1.2f,CI=%1.2f:%1.2f,RB=1:1,RC=%d:%d,RCI=%d:%d)_(NDX=%d,Tmax=%d)",Dead1,Coagulation2,CoaIntra1,CoaIntra2,RadioCoa1,RadioCoa2,RadioCoaIntra1,RadioCoaIntra2,NDX,T_max);
 	CreaContenedor(contenedor);
 	
-	//sprintf(NombrePD,"%s/PD",contenedor);
-	//pD=fopen(NombrePD, "a");
-	//fprintf(pD,"#d2 c21 Rho_1 Rho_2 time\n"); 
-	//fclose(pD);
+	sprintf(NombrePD,"%s/PD",contenedor);
+	pD=fopen(NombrePD, "a");
+	fprintf(pD,"#d2 c21 Rho_1 Rho_2 time\n"); 
+	fclose(pD);
 	
-  for(Dead2=0.31;Dead2<0.52;Dead2+=1.01)
+  for(Dead2=0.25;Dead2<0.52;Dead2+=0.01)
   {
 	  		//pD=fopen(NombrePD, "a");
 			//fprintf(pD,"\n"); 
 			//fclose(pD);
-	for(Coagulation1=0.47;Coagulation1<0.52;Coagulation1+=1.01)
+	for(Coagulation1=0.0;Coagulation1<0.52;Coagulation1+=0.01)
 	{			
 			
 			SetSpecie2(1, Birth1, Coagulation1, CoaIntra1, Dead1, RadioBirth1, RadioCoa1, RadioCoaIntra1);
 			SetSpecie2(2, Birth2, Coagulation2, CoaIntra2, Dead2, RadioBirth2, RadioCoa2, RadioCoaIntra2);
 			
-			sprintf(contenedorCompleto,"%s/(d2=%1.2f,c21=%1.2f)*",contenedor,Dead2,Coagulation1);
-			CreaContenedor(contenedorCompleto);
+			//sprintf(contenedorCompleto,"%s/(d2=%1.2f,c21=%1.2f)*",contenedor,Dead2,Coagulation1);
+			//CreaContenedor(contenedorCompleto);
 	
 			ResetFloat2D_MP(&MP_RhoVsT_1);
 			
@@ -136,23 +136,23 @@ RadioCoaIntra2=10;
 				Float2D_MP MP_RhoVsT;	
 						InicializaFloat2D_MP(&MP_RhoVsT, T_max, NoEspecies, MaxPar);
 						
-			Float2D_MP MP_Corr2D_1;
-			InicializaFloat2D_MP(&MP_Corr2D_1, NDX, NDY, 0);
+			//Float2D_MP MP_Corr2D_1;
+			//InicializaFloat2D_MP(&MP_Corr2D_1, NDX, NDY, 0);
 			
-			Float2D_MP MP_Corr2D_2;
-			InicializaFloat2D_MP(&MP_Corr2D_2, NDX, NDY, 0);
+			//Float2D_MP MP_Corr2D_2;
+			//InicializaFloat2D_MP(&MP_Corr2D_2, NDX, NDY, 0);
 			
-			Float2D_MP MP_Corr2D_12;
-			InicializaFloat2D_MP(&MP_Corr2D_12, NDX, NDY, 0);
+			//Float2D_MP MP_Corr2D_12;
+			//InicializaFloat2D_MP(&MP_Corr2D_12, NDX, NDY, 0);
 			
-			Float1D_MP MP_Correlacion_1;
-			InicializaFloat1D_MP(&MP_Correlacion_1, NDX);
+			//Float1D_MP MP_Correlacion_1;
+			//InicializaFloat1D_MP(&MP_Correlacion_1, NDX);
 			
-			Float1D_MP MP_Correlacion_2;
-			InicializaFloat1D_MP(&MP_Correlacion_2, NDX);
+			//Float1D_MP MP_Correlacion_2;
+			//InicializaFloat1D_MP(&MP_Correlacion_2, NDX);
 			
-			Float1D_MP MP_Correlacion_12;
-			InicializaFloat1D_MP(&MP_Correlacion_12, NDX);
+			//Float1D_MP MP_Correlacion_12;
+			//InicializaFloat1D_MP(&MP_Correlacion_12, NDX);
 								
 			///////////////////////////////////Termina prepara Contenedor MEMORIA de cada PROCESO
 
@@ -248,44 +248,44 @@ RadioCoaIntra2=10;
 			
 				SumaFloat2D_MP(&MP_RhoVsT, &MP_RhoVsT_1);
 				
-				#pragma omp master
-				{
-					PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
-				}
+			//	#pragma omp master
+				//{
+				//	PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
+				//}
 			////////Correlacion
 			
 			
-			ResetFloat2D_MP(&MP_Corr2D_1);	
-			ResetFloat2D_MP(&MP_Corr2D_2);
-			ResetFloat2D_MP(&MP_Corr2D_12);	
+			//ResetFloat2D_MP(&MP_Corr2D_1);	
+			//ResetFloat2D_MP(&MP_Corr2D_2);
+			//ResetFloat2D_MP(&MP_Corr2D_12);	
 			
-			ResetFloat1D_MP(&MP_Correlacion_1);
-			ResetFloat1D_MP(&MP_Correlacion_2);
-			ResetFloat1D_MP(&MP_Correlacion_12);
+			//ResetFloat1D_MP(&MP_Correlacion_1);
+			//ResetFloat1D_MP(&MP_Correlacion_2);
+			//ResetFloat1D_MP(&MP_Correlacion_12);
 									
-			ResetFloat1D_MP(&MP_Correlacion_1G);
-			ResetFloat1D_MP(&MP_Correlacion_2G);
-			ResetFloat1D_MP(&MP_Correlacion_12G);
+			//ResetFloat1D_MP(&MP_Correlacion_1G);
+			//ResetFloat1D_MP(&MP_Correlacion_2G);
+			//ResetFloat1D_MP(&MP_Correlacion_12G);
 			
-						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_1, 1, 1);
-						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_2, 2, 2);
-						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_12, 1, 2);
+						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_1, 1, 1);
+						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_2, 2, 2);
+						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_12, 1, 2);
 						
-						if(MP_Corr2D_1.NoEnsambles > 2)
-						{
-							CompactaCorrelacion(&MP_Corr2D_1, &MP_Correlacion_1);
-							SumaFloat1D_MP(&MP_Correlacion_1,&MP_Correlacion_1G);
-						}
-						if(MP_Corr2D_2.NoEnsambles > 2)
-						{
-							CompactaCorrelacion(&MP_Corr2D_2, &MP_Correlacion_2);
-							SumaFloat1D_MP(&MP_Correlacion_2,&MP_Correlacion_2G);
-						}
-						if(MP_Corr2D_12.NoEnsambles > 2)
-						{
-							CompactaCorrelacion(&MP_Corr2D_12, &MP_Correlacion_12);
-							SumaFloat1D_MP(&MP_Correlacion_12,&MP_Correlacion_12G);
-						}
+						//if(MP_Corr2D_1.NoEnsambles > 2)
+						//{
+							//CompactaCorrelacion(&MP_Corr2D_1, &MP_Correlacion_1);
+							//SumaFloat1D_MP(&MP_Correlacion_1,&MP_Correlacion_1G);
+						//}
+						//if(MP_Corr2D_2.NoEnsambles > 2)
+						//{
+							//CompactaCorrelacion(&MP_Corr2D_2, &MP_Correlacion_2);
+							//SumaFloat1D_MP(&MP_Correlacion_2,&MP_Correlacion_2G);
+						//}
+						//if(MP_Corr2D_12.NoEnsambles > 2)
+						//{
+							//CompactaCorrelacion(&MP_Corr2D_12, &MP_Correlacion_12);
+							//SumaFloat1D_MP(&MP_Correlacion_12,&MP_Correlacion_12G);
+						//}
 						
 						//Libera Memoria
 						for(Par=0;Par<MaxPar;Par++)
@@ -294,27 +294,27 @@ RadioCoaIntra2=10;
 						}
 						LiberaMemoriaFloat2D_MP(&MP_RhoVsT);	
 						
-						LiberaMemoriaFloat2D_MP(&MP_Corr2D_1);
-						LiberaMemoriaFloat2D_MP(&MP_Corr2D_2);	
-						LiberaMemoriaFloat2D_MP(&MP_Corr2D_12);
+						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_1);
+						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_2);	
+						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_12);
 						
-						LiberaMemoriaFloat1D_MP(&MP_Correlacion_1);
-						LiberaMemoriaFloat1D_MP(&MP_Correlacion_2);
-						LiberaMemoriaFloat1D_MP(&MP_Correlacion_12);
+						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_1);
+						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_2);
+						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_12);
 
 			}	////////////////////////////////////////////////////////////////////TERMINA PARALLEL
 
-					GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);
-					GuardaCorrelacion_MP(contenedorCompleto, "2-2" , &MP_Correlacion_2G);
-					GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
+					//GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);
+					//GuardaCorrelacion_MP(contenedorCompleto, "2-2" , &MP_Correlacion_2G);
+					//GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
 			
 			//GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,NULL);	
-				//if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
-				//{
-					//pD=fopen(NombrePD, "a");
-					//fprintf(pD,"%f %f %f %f %d\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles,T_st); 
-					//fclose(pD);
-				//}
+				if(MP_RhoVsT_1.array[T_st][1]>0.0 || MP_RhoVsT_1.array[T_st][2]>0.0)
+				{
+					pD=fopen(NombrePD, "a");
+					fprintf(pD,"%f %f %f %f %d\n",Dead2,Coagulation1, MP_RhoVsT_1.array[T_st][1]/(float)MP_RhoVsT_1.NoEnsambles, MP_RhoVsT_1.array[T_st][2]/(float)MP_RhoVsT_1.NoEnsambles,T_st); 
+					fclose(pD);
+				}
 				
 				if(fabs(MP_RhoVsT_1.array[T_st][1] - Rho_A) < 2.0*0.01*20.0)
 				{
