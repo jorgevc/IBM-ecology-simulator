@@ -76,10 +76,10 @@ return;
 FILE* AbreRhoVsTEn(char *contenedor)
 {
 FILE *aA;
-char archivo[200]="DATOS/";
-// mkdir(archivo,00777); Descomentar para crear el directorio si es que no existe.
-strcat(archivo,contenedor);
-strcat(archivo,"/RhoVsT");
+char archivo[200];
+
+sprintf(archivo,"%s/RhoVsT",contenedor);
+
 		aA=fopen(archivo, "w");
 		fputs("# t   rho   tipo (tipo 0 es la total)\n",aA);
 		fclose(aA);
@@ -428,7 +428,6 @@ if(RhoVsT!=NULL)
 	float NoEnsambles=(float)RhoVsT->NoEnsambles;
 
 	datos=AbreRhoVsTEn(contenedor); 
-
 	int T,e;
 	for(T=0;T<=T_max;T++)
 	{
@@ -445,13 +444,11 @@ if(RhoVsT!=NULL)
 if(RhoDist!=NULL)
 {
 	int RhoPart;
-	char archDist[250]="DATOS/";
-	char nombre[30];
-	strcat(archDist,contenedor);
-	sprintf(nombre,"/RhoDistT_%d",RhoDist->T);
-	strcat(archDist,nombre);
+	char archDist[250];
+
+	sprintf(archDist,"%s/RhoDist_T=%d_Samples=%d",contenedor,RhoDist->T,RhoDist->NoEnsambles);
 	dist=fopen(archDist,"w");
-	fputs("# Rho   Prob   T\n",dist);
+	fputs("# Rho   Prob\n",dist);
 		for(RhoPart=0;RhoPart<=(RhoDist->i_max);RhoPart++)
 		{
 			fprintf(dist,"%f %f\n",((float)RhoPart) * (RhoDist->TamParticion),(float)(RhoDist->array[RhoPart])/(float)(RhoDist->NoEnsambles));
