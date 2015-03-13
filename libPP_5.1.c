@@ -8,24 +8,25 @@ Copyright 2012 Jorge Velazquez
 #include <time.h>
 #include <fftw3.h>
 #include "GNA.h"
-#include "libPP_5.0.h"
+#include "libPP_5.1.h"
 
 
-especie *parametros=NULL;
-static float Max_Metabolic=0.0;
+//especie *parametros=NULL; deprecated
+//static float Max_Metabolic=0.0; deprecated
  clock_t start, end, start2, end2;
 static double cpu_time_used=0.0;
 static double tiempo2=0.0;
 
 Grupo GRUPO_INI = { 0, 0, 0, -1 }; //TIPO = 0 : Todos los tipos, s = 0 : Todos los tamanos, NEG = 0 : No negacion, Numero de elementos en la ultima vez que se proceso (-1 : no procesado todavia)
 
-void AlojaMemoriaEspecie(int tipo)
+void AlojaMemoriaEspecie(int tipo, especie *param)
 {	
 static int Max_especie=-1;
 		if(Max_especie<tipo)
 		{
-			parametros = (especie *)realloc(parametros, (tipo + 1)*sizeof(especie));
-			if ( parametros == NULL ) 
+			param = (especie *)realloc(param, (tipo + 1)*sizeof(especie));
+			
+			if ( param == NULL ) 
 			{
 				printf("Error en memoria de parametros!\n");
 				exit(0);
@@ -35,73 +36,75 @@ static int Max_especie=-1;
 			}
 			//printf("Memoria alojada especie %d, de tamano:%d\n", tipo,(int)(tipo + 1)*sizeof(especie));
 		}
+		
 return;
 }
 
-void SetBirth(float L,int tipo)
+void SetBirth(float L,int tipo,especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].Birth=L;
+	
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].Birth=L;
 return;
 }
 
-void SetCoagulation(float e,int tipo)
+void SetCoagulation(float e,int tipo, especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].Coagulation=e;
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].Coagulation=e;
 return;
 }
 
-void SetCoagulationIntra(float e,int tipo)
+void SetCoagulationIntra(float e,int tipo, especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].CoagulationIntra=e;
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].CoagulationIntra=e;
 return;
 }
 
-void SetDead(float d,int tipo)
+void SetDead(float d,int tipo, especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].Dead=d;
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].Dead=d;
 return;
 }
 
-void SetRadioBirth(int rb, int tipo)
+void SetRadioBirth(int rb, int tipo, especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].RadioBirth=rb;
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].RadioBirth=rb;
 return;
 }
 
-void SetRadioCoa(int rc, int tipo)
+void SetRadioCoa(int rc, int tipo, especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].RadioCoa=rc;
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].RadioCoa=rc;
 return;
 }
 
-void SetRadioCoaIntra(int rc, int tipo)
+void SetRadioCoaIntra(int rc, int tipo, especie *param)
 {
-	AlojaMemoriaEspecie(tipo);
-	parametros[tipo].RadioCoaIntra=rc;
+	AlojaMemoriaEspecie(tipo, param);
+	param[tipo].RadioCoaIntra=rc;
 return;
 }
 
-void EscalaTiempoMetabolico(int tipo)
+void EscalaTiempoMetabolico(int tipo, environment *env)
 {
 float Metabolizmo=0.0;
-	if(parametros==NULL)
+	if(env->param==NULL)
 	{
 		printf("No hay parametros a normalizar\n");
 		return;
 	}else{
-		Metabolizmo=parametros[tipo].Birth;
-		Metabolizmo+=parametros[tipo].Coagulation;
-		Metabolizmo+=parametros[tipo].CoagulationIntra;
-		Metabolizmo+=parametros[tipo].Dead;
-		if(Max_Metabolic<Metabolizmo)
+		Metabolizmo=env->param[tipo].Birth;
+		Metabolizmo+=env->param[tipo].Coagulation;
+		Metabolizmo+=env->param[tipo].CoagulationIntra;
+		Metabolizmo+=env->param[tipo].Dead;
+		if(env->Max_Metabolic<Metabolizmo)
 		{
-			Max_Metabolic=Metabolizmo;
+			env->Max_Metabolic=Metabolizmo;
 		//	printf("escalado Metabolizmo a %f especie:%d\n",Max_Metabolic,tipo);
 		}
 	}
@@ -258,144 +261,145 @@ Libres=((NDX * NDY) - (es->ON))-N;
 return;
 }
 
-void ActualizaRyC(estado *es, int N, int campo)
-{
-float Rand; 
-float pDead, pCreacion, pCoagulation1, C, Dead, Birth, Coagulation1, Nada,pCoa2;
-sitio vecino;
-int **s = es->s;
-int NDX = es->NDX;
-int NDY = es->NDY;
-int i=es->SO[N].i;
-int j=es->SO[N].j;
-sitio *SO = es->SO;
-int radioCre;
-int radioCoa;
-int ho = (es->TIPO[i][j] * 10) - 5;	//Nicho0 cambiar cuando cambie numero de especies distinto a 50 (solo en nicho es necesario)
+//void ActualizaRyC(estado *es, int N, int campo, especie *parametros)
+//{
+//float Max_Metabolic = env->
+//float Rand; 
+//float pDead, pCreacion, pCoagulation1, C, Dead, Birth, Coagulation1, Nada,pCoa2;
+//sitio vecino;
+//int **s = es->s;
+//int NDX = es->NDX;
+//int NDY = es->NDY;
+//int i=es->SO[N].i;
+//int j=es->SO[N].j;
+//sitio *SO = es->SO;
+//int radioCre;
+//int radioCoa;
+//int ho = (es->TIPO[i][j] * 10) - 5;	//Nicho0 cambiar cuando cambie numero de especies distinto a 50 (solo en nicho es necesario)
 	
-	Rand = F_JKISS();
+	//Rand = F_JKISS();
 	
-	Dead=parametros[es->TIPO[i][j]].Dead; // modelo neutral y J-C
-	// rdead = ((float)(es->TIPO[i][j]-500)/5000.0)+0.05; //Modelo Lottery
-	Birth=parametros[es->TIPO[i][j]].Birth;
-//	Dead=Birth - (Birth - parametros[es->TIPO[i][j]].Dead) * exp(-pow(campo - ho,2.0)/20000.0);  // funcion nicho0 remaster
-	Coagulation1=parametros[es->TIPO[i][j]].Coagulation;	
-	pCoa2=parametros[es->TIPO[i][j]].CoagulationIntra/Max_Metabolic;
-	pDead=Dead/Max_Metabolic;	//Asignar Max_Metabolic, si no hay division entre cero.
-	pCreacion = Birth/Max_Metabolic;
-	pCoagulation1 = Coagulation1/Max_Metabolic;
+	//Dead=parametros[es->TIPO[i][j]].Dead; // modelo neutral y J-C
+	//// rdead = ((float)(es->TIPO[i][j]-500)/5000.0)+0.05; //Modelo Lottery
+	//Birth=parametros[es->TIPO[i][j]].Birth;
+////	Dead=Birth - (Birth - parametros[es->TIPO[i][j]].Dead) * exp(-pow(campo - ho,2.0)/20000.0);  // funcion nicho0 remaster
+	//Coagulation1=parametros[es->TIPO[i][j]].Coagulation;	
+	//pCoa2=parametros[es->TIPO[i][j]].CoagulationIntra/Max_Metabolic;
+	//pDead=Dead/Max_Metabolic;	//Asignar Max_Metabolic, si no hay division entre cero.
+	//pCreacion = Birth/Max_Metabolic;
+	//pCoagulation1 = Coagulation1/Max_Metabolic;
 
-	if(Rand<=pDead) //aniquilacion
-	{	
-		s[i][j]=0;
-		SO[N]=SO[(es->ON)];
-		es->INDICE[SO[es->ON].i][SO[es->ON].j]=N;
-		(es->ON)--;	
-		es->TIPO[i][j]=0;
+	//if(Rand<=pDead) //aniquilacion
+	//{	
+		//s[i][j]=0;
+		//SO[N]=SO[(es->ON)];
+		//es->INDICE[SO[es->ON].i][SO[es->ON].j]=N;
+		//(es->ON)--;	
+		//es->TIPO[i][j]=0;
 		
-	}else{  //creation o coagulacion o nada
-		if(Rand<=(pDead + pCreacion)) //creation
-		{
-			radioCre=parametros[es->TIPO[i][j]].RadioBirth;
-			EligeUniforme(i,j,radioCre,&vecino);
+	//}else{  //creation o coagulacion o nada
+		//if(Rand<=(pDead + pCreacion)) //creation
+		//{
+			//radioCre=parametros[es->TIPO[i][j]].RadioBirth;
+			//EligeUniforme(i,j,radioCre,&vecino);
 			
-			if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
-			if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
-			if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
-			if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
+			//if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
+			//if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
+			//if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
+			//if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
 			
-			if(s[vecino.i][vecino.j]==0)
-			{
-				s[vecino.i][vecino.j]=1;
-				(es->ON)++;
-				SO[(es->ON)]=vecino;
-				es->INDICE[vecino.i][vecino.j]=(es->ON);
-				es->TIPO[vecino.i][vecino.j]=es->TIPO[i][j];
-			}
+			//if(s[vecino.i][vecino.j]==0)
+			//{
+				//s[vecino.i][vecino.j]=1;
+				//(es->ON)++;
+				//SO[(es->ON)]=vecino;
+				//es->INDICE[vecino.i][vecino.j]=(es->ON);
+				//es->TIPO[vecino.i][vecino.j]=es->TIPO[i][j];
+			//}
 			
-		}else{ //coagulacion1 o 2 o nada
-			if(Rand<=(pDead + pCreacion + pCoagulation1))  //coagulacion
-			{
-				radioCoa=parametros[es->TIPO[i][j]].RadioCoa;
-				 EligeUniforme(i,j,radioCoa,&vecino);
-				if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
-				if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
-				if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
-				if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
+		//}else{ //coagulacion1 o 2 o nada
+			//if(Rand<=(pDead + pCreacion + pCoagulation1))  //coagulacion
+			//{
+				//radioCoa=parametros[es->TIPO[i][j]].RadioCoa;
+				 //EligeUniforme(i,j,radioCoa,&vecino);
+				//if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
+				//if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
+				//if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
+				//if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
 				
-				if(s[vecino.i][vecino.j]==1 && (es->TIPO[vecino.i][vecino.j])!=(es->TIPO[i][j]))     // mato a los que NO SON de mi propia especie 
-				{
-					s[vecino.i][vecino.j]=0;
-					SO[(es->INDICE[vecino.i][vecino.j])]=SO[(es->ON)];
-					es->INDICE[SO[es->ON].i][SO[es->ON].j]=(es->INDICE[vecino.i][vecino.j]);
-					(es->ON)--;
-					es->TIPO[vecino.i][vecino.j]=0;
-				}
-			}else{  //coagulacion 2 o nada
-				if(Rand<=(pDead + pCreacion + pCoagulation1 + pCoa2)) //coagulation Inter
-				{
-					radioCoa=parametros[es->TIPO[i][j]].RadioCoaIntra;
-					 EligeUniforme(i,j,radioCoa,&vecino);
-					if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
-					if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
-					if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
-					if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
+				//if(s[vecino.i][vecino.j]==1 && (es->TIPO[vecino.i][vecino.j])!=(es->TIPO[i][j]))     // mato a los que NO SON de mi propia especie 
+				//{
+					//s[vecino.i][vecino.j]=0;
+					//SO[(es->INDICE[vecino.i][vecino.j])]=SO[(es->ON)];
+					//es->INDICE[SO[es->ON].i][SO[es->ON].j]=(es->INDICE[vecino.i][vecino.j]);
+					//(es->ON)--;
+					//es->TIPO[vecino.i][vecino.j]=0;
+				//}
+			//}else{  //coagulacion 2 o nada
+				//if(Rand<=(pDead + pCreacion + pCoagulation1 + pCoa2)) //coagulation Inter
+				//{
+					//radioCoa=parametros[es->TIPO[i][j]].RadioCoaIntra;
+					 //EligeUniforme(i,j,radioCoa,&vecino);
+					//if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
+					//if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
+					//if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
+					//if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
 					
-					if(s[vecino.i][vecino.j]==1 && (es->TIPO[vecino.i][vecino.j])==(es->TIPO[i][j]))     //  Solo mato a mi propia especie 
-					{
-						s[vecino.i][vecino.j]=0;
-						SO[(es->INDICE[vecino.i][vecino.j])]=SO[(es->ON)];
-						es->INDICE[SO[es->ON].i][SO[es->ON].j]=(es->INDICE[vecino.i][vecino.j]);
-						(es->ON)--;
-						es->TIPO[vecino.i][vecino.j]=0;
-					}
-				}	
-			}
-		}
-	}
-return;
-}
+					//if(s[vecino.i][vecino.j]==1 && (es->TIPO[vecino.i][vecino.j])==(es->TIPO[i][j]))     //  Solo mato a mi propia especie 
+					//{
+						//s[vecino.i][vecino.j]=0;
+						//SO[(es->INDICE[vecino.i][vecino.j])]=SO[(es->ON)];
+						//es->INDICE[SO[es->ON].i][SO[es->ON].j]=(es->INDICE[vecino.i][vecino.j]);
+						//(es->ON)--;
+						//es->TIPO[vecino.i][vecino.j]=0;
+					//}
+				//}	
+			//}
+		//}
+	//}
+//return;
+//} deprecated
 
 
-void BarrMCcRyCamp(estado *es)
-{
-//	start2 = clock();  //clock comentar!!
-int Indice,i,vtipo;
-float DT=0.0;
-int campo=0;
+//void BarrMCcRyCamp(estado *es, environment *env)
+//{
+////	start2 = clock();  //clock comentar!!
+//int Indice,i,vtipo;
+//float DT=0.0;
+//int campo=0;
 	
-	while(DT<1.0){
-		if((es->ON) != 0){
+	//while(DT<1.0){
+		//if((es->ON) != 0){
 		
-			 DT+=1.0/(es->ON); 
-			Indice = I_JKISS(1,(es->ON));
-		//	campo = pow(250000-pow(es->SO[Indice].j - 500,2),0.5);  //nicho0 remaster campo 0:500
-			//	campo = 0;  //neutral y J-C y Heromyopia
-			ActualizaRyC(es,Indice,campo);	
-		}else{
-			DT=2.0;
-		}
-	}
+			 //DT+=1.0/(es->ON); 
+			//Indice = I_JKISS(1,(es->ON));
+		////	campo = pow(250000-pow(es->SO[Indice].j - 500,2),0.5);  //nicho0 remaster campo 0:500
+			////	campo = 0;  //neutral y J-C y Heromyopia
+			//ActualizaRyC(es,Indice,campo, env->param);
+		//}else{
+			//DT=2.0;
+		//}
+	//}
 	
 	
-/*	for(i=1;i<=1;i++)
-	{
-		vtipo=I_JKISS(0,999);
-		 InsertaIndividuosAleatorio(es, 4, vtipo); //Valores para nicho
-		// InsertaIndividuosAleatorio(es, 40, vtipo); //Valores lottery
-		//InsertaIndividuosAleatorio(es, 4, vtipo); //Valores J-C
-		//InsertaIndividuosAleatorio(es, 2, vtipo); //valores para neutral
-	}
-*/
-(es->T)++;			
+///*	for(i=1;i<=1;i++)
+	//{
+		//vtipo=I_JKISS(0,999);
+		 //InsertaIndividuosAleatorio(es, 4, vtipo); //Valores para nicho
+		//// InsertaIndividuosAleatorio(es, 40, vtipo); //Valores lottery
+		////InsertaIndividuosAleatorio(es, 4, vtipo); //Valores J-C
+		////InsertaIndividuosAleatorio(es, 2, vtipo); //valores para neutral
+	//}
+//*/
+//(es->T)++;			
 
-//     end2 = clock();			//clock comentar!!
-  //   tiempo2 = ((double) (end2 - start2))/ CLOCKS_PER_SEC;;  //clock comentar!!	
-  //   printf("Tiempo en elejir vecinos en una corrida:%f, tiempo corrida:%f\n",cpu_time_used,tiempo2);
-   //  cpu_time_used=0.0;
+////     end2 = clock();			//clock comentar!!
+  ////   tiempo2 = ((double) (end2 - start2))/ CLOCKS_PER_SEC;;  //clock comentar!!	
+  ////   printf("Tiempo en elejir vecinos en una corrida:%f, tiempo corrida:%f\n",cpu_time_used,tiempo2);
+   ////  cpu_time_used=0.0;
 		
-return;
-}
+//return;
+//} Deprecated
 
 
 void EligeUniforme(int i,int j,int radio, sitio *vecino)
@@ -1245,30 +1249,32 @@ void InicializaDist_MP(Dist_MP *Objeto, float TamParticion, float xIni, float xF
 return;
 }
 
-void SetSpecie(int NoEspecie, float Birth, float Coagulation, float Dead, float RadioBirth, float RadioCoa)
-{
-	SetBirth(Birth,NoEspecie);
-	SetCoagulation(Coagulation,NoEspecie);
-	SetCoagulationIntra(0.0,NoEspecie);
-	SetDead(Dead,NoEspecie);
-	SetRadioBirth(RadioBirth,NoEspecie);
-	SetRadioCoa(RadioCoa,NoEspecie);
-	EscalaTiempoMetabolico(NoEspecie);
+//void SetSpecie(int NoEspecie, float Birth, float Coagulation, float Dead, float RadioBirth, float RadioCoa)
+//{
+	//SetBirth(Birth,NoEspecie);
+	//SetCoagulation(Coagulation,NoEspecie);
+	//SetCoagulationIntra(0.0,NoEspecie);
+	//SetDead(Dead,NoEspecie);
+	//SetRadioBirth(RadioBirth,NoEspecie);
+	//SetRadioCoa(RadioCoa,NoEspecie);
+	//EscalaTiempoMetabolico(NoEspecie);
 			
-return;
-}
+//return;
+//} DEPRECATED
 
-void SetSpecie2(int NoEspecie, float Birth, float Coagulation,float CoagulationIntra, float Dead, float RadioBirth, float RadioCoa, float RadioCoaIntra )
+void SetSpecie2(int NoEspecie, float Birth, float Coagulation,float CoagulationIntra, float Dead, float RadioBirth, float RadioCoa, float RadioCoaIntra, environment *env)
 {
 		//printf("Especie %d inicializando\n",NoEspecie);
-	SetBirth(Birth,NoEspecie);
-	SetCoagulation(Coagulation,NoEspecie);
-	SetCoagulationIntra(CoagulationIntra,NoEspecie);
-	SetDead(Dead,NoEspecie);
-	SetRadioBirth(RadioBirth,NoEspecie);
-	SetRadioCoa(RadioCoa,NoEspecie);
-	SetRadioCoaIntra(RadioCoaIntra,NoEspecie);
-	EscalaTiempoMetabolico(NoEspecie);
+		
+	SetBirth(Birth,NoEspecie, env->param);
+	SetCoagulation(Coagulation,NoEspecie, env->param);
+	SetCoagulationIntra(CoagulationIntra,NoEspecie, env->param);
+	SetDead(Dead,NoEspecie, env->param);
+	SetRadioBirth(RadioBirth,NoEspecie, env->param);
+	SetRadioCoa(RadioCoa,NoEspecie, env->param);
+	SetRadioCoaIntra(RadioCoaIntra,NoEspecie, env->param);
+	
+	EscalaTiempoMetabolico(NoEspecie, env);
 		//	printf("Especie %d lista\n",NoEspecie);
 return;
 }

@@ -1,6 +1,9 @@
 /** Contains a coordinate pair. 
  * Generaly it is used to label a site on a lattice.
 */
+
+typedef struct ENV_STRUCT environment;
+
 typedef struct {
 int i;			/**< i coordinate, could be thinked as the X coordinate*/ 
 int j;			/**< j coordinate, could be thinked as the Y coordinate*/ 
@@ -92,6 +95,11 @@ int NoMuestras;
 int Muestra;	/** Muestra = 0 : Toma todas las muestras. */
 } CorrDescriptor;
 
+struct ENV_STRUCT {
+especie *param;
+float Max_Metabolic;
+};
+
 extern Grupo GRUPO_INI;
 
 /** Set the value of the Birth rate of a species. 
@@ -101,7 +109,7 @@ extern Grupo GRUPO_INI;
  * 			After seting all the values for a specie it should be call the function @see EscalaTiempoMetabolico(int tipo).
  * @see especie
  * */
-void SetBirth(float L, int tipo);
+void SetBirth(float L, int tipo, especie *param);
 
 /** Set the value of the Inter-Coagulation rate of a species. 
  * @param[in] e the value of the Inter-Coagulation rate.
@@ -110,7 +118,7 @@ void SetBirth(float L, int tipo);
  * 			After seting all the values for a species it should be call the function @see EscalaTiempoMetabolico(int tipo).
  * @see especie
  * */
-void SetCoagulation(float e, int tipo);
+void SetCoagulation(float e, int tipo,especie *param);
 
 /** Set the value of the Intra-Coagulation rate of a species. 
  * @param[in] e the value of the Intra-Coagulation rate.
@@ -119,7 +127,7 @@ void SetCoagulation(float e, int tipo);
  * 			After seting all the values for a species it should be call the function @see EscalaTiempoMetabolico(int tipo).
  * @see especie
  * */
-void SetCoagulationIntra(float e,int tipo);
+void SetCoagulationIntra(float e,int tipo,especie *param);
 
 /** Set the value of the Intrinsic Dead rate of a species. 
  * @param[in] d the value of the Intrinsic Dead rate.
@@ -128,7 +136,7 @@ void SetCoagulationIntra(float e,int tipo);
  * 			After seting all the values for a species it should be call the function @see EscalaTiempoMetabolico(int tipo).
  * @see especie
  * */
-void SetDead(float d, int tipo);
+void SetDead(float d, int tipo,especie *param);
 
 /** Set the value of the Birth range of a species in number of lattice sites. 
  * @param[in] rb the radio in number of lattice sites of the range of the new offsprings.
@@ -136,7 +144,7 @@ void SetDead(float d, int tipo);
  * 			it is recommended to start with values 1,2 ... and so on for the species to save memory (lowest posible numbers greater than zero).
  * @see especie 
  * */
-void SetRadioBirth(int rb, int tipo);
+void SetRadioBirth(int rb, int tipo,especie *param);
 
 /** Set the value of the Inter-Coagulation range of a species in number of lattice sites. 
  * @param[in] rc the radio in number of lattice sites of the range of Inter-Coagulation..
@@ -144,13 +152,14 @@ void SetRadioBirth(int rb, int tipo);
  * 			it is recommended to start with values 1,2 ... and so on for the species to save memory (lowest posible numbers greater than zero).
  * @see especie 
  * */
-void SetRadioCoa(int rc, int tipo);
+void SetRadioCoa(int rc, int tipo,especie *param);
 
 /** This shuld be called when a rate of the specie parameters is updated, or after setting up all the rates for the first time.  
  * It sets an internal scale factor of the library that is used to map the rates given in units of phisical time, to rates in units of computational Time-steps.
  * @param tipo the number that identifies the specie. 
  * */
-void EscalaTiempoMetabolico(int tipo);
+//void EscalaTiempoMetabolico(int tipo); deprecated
+void EscalaTiempoMetabolico(int tipo, environment *env);
 
 /** allocate the necesary memory for a lattice (system). 
  * @param[out] *es pointer to the lattice (system)
@@ -178,14 +187,15 @@ void GeneraEstadoAleatorio(estado *es, float frac, int tipo);
  * @param N the index of the individual that is going to be updated @see estado::INDICE
  * @param campo In the niche model it is used to simulate the enviromental niche.
  */
-void ActualizaRyC(estado *es, int N, int campo);
+//void ActualizaRyC(estado *es, int N, int campo, especie *parametros); deprecated
 
 /**
  * Makes the system <*es> evolve one Time-step. 
  * One Time-step is counted when on average all the individuals in the system has been updated once.
  * @param *es pointer to the struct 'estado' that is going to be evolved. 
  */
-void BarrMCcRyCamp(estado *es);
+//void BarrMCcRyCamp(estado *es); //deprecated
+
 
 /**
  * Chouse a neighbour(occupied site) of (i,j) within a radio with equal probabiliy of each neighbour to be picked. 
@@ -270,7 +280,7 @@ void InsertaIndividuoEn(estado *es,int i,int j,int tipo);
  * @param tipo The species to be allocated. 
  * @see especie
  */
-void AlojaMemoriaEspecie(int tipo);
+void AlojaMemoriaEspecie(int tipo,especie *param);
 
 /**
  * Writes the density of each specie into a <Float2D_MP> and the distribution of densities among species in a <Dist_MP>.
@@ -380,7 +390,7 @@ void ResetDist_MP(Dist_MP *Dist);
  * @param RadioCoa Radio within Inter-Competion acts in units of lattice sites.
  * @param RadioCoaIntra Radio within Intra-Competion acts in units of lattice sites.
  */
-void SetSpecie2(int NoEspecie, float Birth, float Coagulation, float CoagulationIntra, float Dead, float RadioBirth, float RadioCoa, float RadioCoaIntra);
+void SetSpecie2(int NoEspecie, float Birth, float Coagulation, float CoagulationIntra, float Dead, float RadioBirth, float RadioCoa, float RadioCoaIntra, environment *env);
 
 /**
  * Deprecated: Employs Correlacion that is Deprecated. 

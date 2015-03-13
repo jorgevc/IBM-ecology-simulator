@@ -26,11 +26,12 @@ Copyright 2015 Jorge Velazquez
 #include <math.h>
 #include <time.h>
 
-#include "libPP_5.0.h"
+//#include "libPP_5.1.h"
+#include "MC_alle_effect.h"
 #include "EntSalArb_MP.h"
 #include "GNA.h"
 #include "conn_mysql.h"
-//#include "alle_effect"
+
 
 main(){	
 	
@@ -42,23 +43,24 @@ int NoEnsambles=20;
 
 int CantidadEspecies=2;
 
+alle_env *env = (alle_env *)malloc(1 * sizeof(alle_env));
+env->param = (especie *)malloc((CantidadEspecies + 1) * sizeof(especie));
+env->param[1].Birth= 1.0;
+env->param[1].Coagulation = 1.0; //Brown usa: 0.00002; 
+env->param[1].CoagulationIntra= 0.2; //Modelo J-C 0.0008
+env->param[1].Dead= 0.4;
+env->param[1].RadioBirth= 1;
+env->param[1].RadioCoa= 10;
+env->param[1].RadioCoaIntra= 10;  //Modelo Heteromyopia 20
 
-float Birth1= 1.0;
-float Coagulation1 = 1.0; //Brown usa: 0.00002; 
-float CoaIntra1= 0.2; //Modelo J-C 0.0008
-float Dead1= 0.4;
-int RadioBirth1= 1;
-int RadioCoa1= 10;
-int RadioCoaIntra1= 10;  //Modelo Heteromyopia 20
 
-
-float Birth2= 1.0;
-float Coagulation2= 0.2; //Brown usa: 0.00002;
-float CoaIntra2=0.2;
-float Dead2 = 0.4;
-int RadioBirth2= 1;
-int RadioCoa2= 10;
-int RadioCoaIntra2= 10;
+env->param[2].Birth= 1.0;
+env->param[2].Coagulation= 0.2; //Brown usa: 0.00002;
+env->param[2].CoagulationIntra=0.2;
+env->param[2].Dead = 0.4;
+env->param[2].RadioBirth= 1;
+env->param[2].RadioCoa= 10;
+env->param[2].RadioCoaIntra= 10;
 
 
 omp_set_num_threads(4);
@@ -81,9 +83,6 @@ Float1D_MP MP_Correlacion_1G;
 		InicializaFloat1D_MP(&MP_Correlacion_1G, NDX);
 		
 /////////////////////////////////////Termina Prepara CONTENEDOR para escribir DATOS	
-			
-			SetSpecie2(1, Birth1, Coagulation1, CoaIntra1, Dead1, RadioBirth1, RadioCoa1, RadioCoaIntra1);
-			SetSpecie2(2, Birth2, Coagulation2, CoaIntra2, Dead2, RadioBirth2, RadioCoa2, RadioCoaIntra2);
 			
 			///////////////////////////////////// INICIA PARALLEL
 
@@ -137,8 +136,7 @@ Float1D_MP MP_Correlacion_1G;
 				{
 					for(Par=0;Par<MaxPar;Par++)
 					{
-						BarrMCcRyCamp(&e[Par]);
-						// barrido montecarlo
+						MC_sweep_alle(&e[Par], env);
 					//necesario?	ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
 					}	
 				
