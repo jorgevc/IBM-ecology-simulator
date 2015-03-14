@@ -2060,7 +2060,7 @@ float Integra(Float1D_MP *Funcion, int inicial, int final)
 	int i;
 	for(i=inicial;i<=final;i++)
 	{
-		Resultado+=logf((Funcion->array[i])/((float)Funcion->NoEnsambles));
+		Resultado+=((Funcion->array[i])/((float)Funcion->NoEnsambles));
 	}
 	
 return Resultado;

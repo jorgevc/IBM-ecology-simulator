@@ -39,29 +39,32 @@ main(){
 int NDX=150;
 int NDY=NDX;
 int T_max = 100;
-int NoEnsambles=20;
+int NoEnsambles=12;
 
-int CantidadEspecies=2;
+int CantidadEspecies=1;
 
 alle_env *env = (alle_env *)malloc(1 * sizeof(alle_env));
 env->param = (especie *)malloc((CantidadEspecies + 1) * sizeof(especie));
 env->param[1].Birth= 1.0;
-env->param[1].Coagulation = 1.0; //Brown usa: 0.00002; 
-env->param[1].CoagulationIntra= 0.2; //Modelo J-C 0.0008
-env->param[1].Dead= 0.4;
-env->param[1].RadioBirth= 1;
+env->param[1].Coagulation = 0.0; //Brown usa: 0.00002; 
+env->param[1].CoagulationIntra= 0.0; //Modelo J-C 0.0008
+env->param[1].Dead= 0.5;
+env->param[1].RadioBirth= 50;
 env->param[1].RadioCoa= 10;
 env->param[1].RadioCoaIntra= 10;  //Modelo Heteromyopia 20
+env->param[1].alle_range= 50;
 
+//env->param[2].Birth= 1.0;
+//env->param[2].Coagulation= 0.0; //Brown usa: 0.00002;
+//env->param[2].CoagulationIntra=0.2;
+//env->param[2].Dead = 0.4;
+//env->param[2].RadioBirth= 1;
+//env->param[2].RadioCoa= 10;
+//env->param[2].RadioCoaIntra= 10;
 
-env->param[2].Birth= 1.0;
-env->param[2].Coagulation= 0.2; //Brown usa: 0.00002;
-env->param[2].CoagulationIntra=0.2;
-env->param[2].Dead = 0.4;
-env->param[2].RadioBirth= 1;
-env->param[2].RadioCoa= 10;
-env->param[2].RadioCoaIntra= 10;
-
+env->NumberOfSpecies=CantidadEspecies;
+env->Max_Metabolic=calculate_metabolic_time(env);
+env->alle_effect = 0.3;
 
 omp_set_num_threads(4);
 
@@ -81,6 +84,10 @@ Float2D_MP MP_RhoVsT_1;
 		
 Float1D_MP MP_Correlacion_1G;
 		InicializaFloat1D_MP(&MP_Correlacion_1G, NDX);
+		ResetFloat1D_MP(&MP_Correlacion_1G);
+		
+Float1D_MP SummaryCorrelation;
+		InicializaFloat1D_MP(&SummaryCorrelation, T_max);
 		
 /////////////////////////////////////Termina Prepara CONTENEDOR para escribir DATOS	
 			
@@ -110,8 +117,8 @@ Float1D_MP MP_Correlacion_1G;
 					for(Par=0;Par<MaxPar;Par++)
 					{
 					//InsertaIndividuosAleatorio(&e[Par],100,NoEspecie);
-					GeneraEstadoAleatorio(&e[Par], 0.2, 1);
-					GeneraEstadoAleatorio(&e[Par], 0.2, 2);
+					GeneraEstadoAleatorio(&e[Par], 0.1, 1);
+					//GeneraEstadoAleatorio(&e[Par], 0.2, 2);
 					}
 
 
@@ -127,6 +134,7 @@ Float1D_MP MP_Correlacion_1G;
 			
 			Float1D_MP MP_Correlacion_1;
 			InicializaFloat1D_MP(&MP_Correlacion_1, NDX);
+			
 								
 			///////////////////////////////////Termina prepara Contenedor MEMORIA de cada PROCESO
 					
@@ -137,7 +145,7 @@ Float1D_MP MP_Correlacion_1G;
 					for(Par=0;Par<MaxPar;Par++)
 					{
 						MC_sweep_alle(&e[Par], env);
-					//necesario?	ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
+						ActualizaRhoVsT_MP(&e[Par],&MP_RhoVsT,NULL);	
 					}	
 				
 						if((i-(i/500)*500)==499)    //Inicializa cada 500 pasos
@@ -147,28 +155,27 @@ Float1D_MP MP_Correlacion_1G;
 		
 						
 						///////////////////////Evolucion de Correlacion
+						ResetFloat2D_MP(&MP_Corr2D_1);	
+						ResetFloat1D_MP(&MP_Correlacion_1);	
 						
-						//if((i-(i/30)*30)==0)    // cada 30 pasos
-						//{
-							//ResetFloat1D_MP(&MP_Correlacion_12G);
-							//ResetFloat1D_MP(&MP_Correlacion_12);
-							//ResetFloat2D_MP(&MP_Corr2D_12);	
-							//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_12, 1, 2);
-							
-							//if(MP_Corr2D_12.NoEnsambles > 0)
-							//{
-								//CompactaCorrelacion(&MP_Corr2D_12, &MP_Correlacion_12);
-								//SumaFloat1D_MP(&MP_Correlacion_12,&MP_Correlacion_12G);
-							//}
-							//#pragma omp barrier
-							//#pragma omp master
-							//{
-								//if(i>400)
-								//{
-									//GuardaCorrelacion_MP(contenedorCompleto, "1-2" , &MP_Correlacion_12G);
-								//}
-							//}
-						//}
+						#pragma omp single
+						{				
+							ResetFloat1D_MP(&MP_Correlacion_1G);
+						}
+			
+						CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_1, 1, 1);
+						
+						if(MP_Corr2D_1.NoEnsambles >= 2)
+						{
+							CompactaCorrelacion(&MP_Corr2D_1, &MP_Correlacion_1);
+							SumaFloat1D_MP(&MP_Correlacion_1,&MP_Correlacion_1G);
+						}
+						#pragma omp barrier
+						#pragma omp single
+						{
+							SummaryCorrelation.array[i]=Integra(&MP_Correlacion_1G, 1, env->param[1].alle_range)/(float)env->param[1].alle_range;
+							SummaryCorrelation.NoEnsambles=1;
+						}
 				}
 				
 				
@@ -190,21 +197,6 @@ Float1D_MP MP_Correlacion_1G;
 				//{
 				//	PD_GuardaEstadoEn_MP(contenedorCompleto, e, id, 1);
 				//}
-			////////Correlacion
-			
-			
-			//ResetFloat2D_MP(&MP_Corr2D_1);	
-			//ResetFloat1D_MP(&MP_Correlacion_1);
-									
-			//ResetFloat1D_MP(&MP_Correlacion_1G);
-			
-						//CFFT_Tipos_MP(e, MaxPar, &MP_Corr2D_1, 1, 1);
-						
-						//if(MP_Corr2D_1.NoEnsambles > 2)
-						//{
-							//CompactaCorrelacion(&MP_Corr2D_1, &MP_Correlacion_1);
-							//SumaFloat1D_MP(&MP_Correlacion_1,&MP_Correlacion_1G);
-						//}
 						
 						//Libera Memoria
 						for(Par=0;Par<MaxPar;Par++)
@@ -212,57 +204,74 @@ Float1D_MP MP_Correlacion_1G;
 							LiberaMemoria(&e[Par]);
 						}
 						LiberaMemoriaFloat2D_MP(&MP_RhoVsT);	
-						
-						//LiberaMemoriaFloat2D_MP(&MP_Corr2D_1);
-						
-						//LiberaMemoriaFloat1D_MP(&MP_Correlacion_1);
+						LiberaMemoriaFloat2D_MP(&MP_Corr2D_1);
+						LiberaMemoriaFloat1D_MP(&MP_Correlacion_1);
 
 			}	////////////////////////////////////////////////////////////////////TERMINA PARALLEL
 	
 			//// Guarda parametros en MySql	y crea CONTENEDOR
 	char contenedor[300];
-	sprintf(contenedor,"test");
+	sprintf(contenedor,"alle_data");
 	CreaContenedor(contenedor);	
 		
-	//char values[300];
-	//sprintf(values,"NULL,%s,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%d,%d,%d,%d,'%s',0",sim_time,
-	//...
-	//NDX,
-	//NDY,
-	//T_max,
-	//NoEnsambles,
-	//contenedor
-	//);
+	char values[300];
+	sprintf(values,"NULL,%s,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%d,%d,%d,%d,'%s',0",sim_time,
+	env->param[1].Birth,
+	env->param[1].Coagulation, 
+	env->param[1].CoagulationIntra, 
+	env->param[1].Dead,
+	env->param[1].RadioBirth,
+	env->param[1].RadioCoa,
+	env->param[1].RadioCoaIntra, 
+	env->param[1].alle_range,
+	env->NumberOfSpecies,
+	env->Max_Metabolic,
+	env->alle_effect,
+	NDX,
+	NDY,
+	T_max,
+	NoEnsambles,
+	contenedor
+	);
 	
-	//printf("MySQL client version: %s\n", mysql_get_client_info());
-	//MYSQL *con = connect_db("localhost","usr", "password", "db");
-	//int inserted_id = insert_into_db(con, "table",values);
-	//mysql_close(con);
+	printf("MySQL client version: %s\n", mysql_get_client_info());
+	MYSQL *con = connect_db("localhost","alle", "effect", "alle");
+	int inserted_id = insert_into_db(con, "single_species",values);
+	mysql_close(con);
 	char contenedorCompleto[200];
-	//sprintf(contenedorCompleto,"%s/%d",contenedor,inserted_id);
-	sprintf(contenedorCompleto,"%s/%d",contenedor,1);
+	sprintf(contenedorCompleto,"%s/%d",contenedor,inserted_id);
 	CreaContenedor(contenedorCompleto);
-	
-	
-	//store_density_evolution(contenedorCompleto,&MP_RhoVsT_1, 0, FisicalTime,R_dyn,Temp_dyn);
+
 	//GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);			
-	GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,NULL);	
+	GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,env->Max_Metabolic);
 	
-	//FILE *aA;
-	//char archivo[200];
-	//sprintf(archivo,"Graficas/simulation.tex");	
-	//aA=fopen(archivo, "w");
-	//fprintf(aA,"\\newcommand{\\data}{../%s/density_evolution}\n\\newcommand{\\plotTitle}{id=%d  }",contenedorCompleto,inserted_id);
-	//fclose(aA);
-	//sprintf(archivo,"Graficas/include_make");
-	//aA=fopen(archivo, "w");
-	//fprintf(aA,"id = %d\n",inserted_id);
-	//fclose(aA);
-	//system("cd Graficas; make figure");
+	FILE *summary;
+	char summaryName[200];
+	char summaryCompleteName[200];
+	sprintf(summaryName,"summaryCorr");
+	sprintf(summaryCompleteName, "%s/%s",contenedorCompleto,summaryName);
+	summary=fopen(summaryCompleteName, "w");
+	fprintf(summary,"T k\n");
+	fclose(summary);
+	GuardaFloat1D_MP(contenedorCompleto,summaryName, &SummaryCorrelation);
+	
+	FILE *aA;
+	char archivo[200];
+	sprintf(archivo,"Plots/simulation.tex");	
+	aA=fopen(archivo, "w");
+	fprintf(aA,"\\newcommand{\\data}{../%s/}\n\\newcommand{\\plotTitle}{id=%d  }",contenedorCompleto,inserted_id);
+	fclose(aA);
+	sprintf(archivo,"Plots/include_make");
+	aA=fopen(archivo, "w");
+	fprintf(aA,"id = %d\n",inserted_id);
+	fclose(aA);
+	system("cd Plots; make figure");
 	//////
 	
  
 	LiberaMemoriaFloat2D_MP(&MP_RhoVsT_1);
+	LiberaMemoriaFloat1D_MP(&SummaryCorrelation);
+	LiberaMemoriaFloat1D_MP(&MP_Correlacion_1G);
 
 						
 return;

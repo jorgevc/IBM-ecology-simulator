@@ -22,6 +22,7 @@ float CoagulationIntra;	/**< Intra-Competition rate.
 int RadioBirth;			/**< Radio within a descendant could born in units of lattice sites. */
 int RadioCoa;			/**< Radio within Inter-Competion acts in units of lattice sites. */
 int RadioCoaIntra;		/**< Radio within Intra-Competion acts in units of lattice sites. */
+int alle_range;
 } especie;
 
 /** Contains the state of the system(lattice). */

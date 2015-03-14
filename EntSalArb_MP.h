@@ -11,7 +11,7 @@ FILE* AbreNoSpeciesVsTEn(char *contenedor);
 void ActualizaNoSpeciesVsT(FILE *archivo,int Species, int T);
 void GuardaCorrelacion(estado *es,int Rini, int Rfin,char *contenedor);
 int CargaEstado(char *contenedor, char *nombre, estado *es, int NDX, int NDY);  //Usar sin haber alojado memoria antes!!!
-void GuardaRhoVsT_MP(char *contenedor, Float2D_MP *RhoVsT, Dist_MP *RhoDist);
+void GuardaRhoVsT_MP(char *contenedor, Float2D_MP *RhoVsT, float TimeUnit);
 void GuardaTiposEn_MP(char *contenedor,Float2D_MP *MP_RhoVsT,int T);
 void GuardaEstadoEn_MP(char *nombre, estado *es,int id,int ensamble);	
 int CargaEstado_MP(char *contenedor, char *nombre, estado *es,int NDX, int NDY,int id,int NoEnsambles);  //Usar sin haber alojado memoria antes!!!

@@ -79,11 +79,7 @@ FILE *aA;
 char archivo[200];
 
 sprintf(archivo,"%s/RhoVsT",contenedor);
-
 		aA=fopen(archivo, "w");
-		fputs("# t   rho   tipo (tipo 0 es la total)\n",aA);
-		fclose(aA);
-		aA=fopen(archivo, "a");
 		return aA;
 }
 
@@ -280,11 +276,11 @@ void GuardaCorrelacion_MP(char *contenedor, char *prefix, Float1D_MP *corr)
 	int T=corr->T;
 	int r;
 	
-	sprintf(archivo,"%s/%s_CorrT_%03d",contenedor,prefix,T);
+	sprintf(archivo,"%s/%s_CorrT",contenedor,prefix);
 
 	arch=fopen(archivo,"w");
 	if(arch==NULL){puts("No se pudo abrir archivo");}
-	fputs("#r g\n",arch);
+	fputs("r g\n",arch);
 	for(r=1;r<=Rfin;r++)
 	{
 			fprintf(arch,"%d %f\n",r,corr->array[r]/((float)corr->NoEnsambles));
@@ -417,45 +413,57 @@ return 1;
 	
 }
 
-void GuardaRhoVsT_MP(char *contenedor, Float2D_MP *RhoVsT, Dist_MP *RhoDist)
+void GuardaRhoVsT_MP(char *contenedor, Float2D_MP *RhoVsT, float TimeUnit)
 {
-FILE *datos, *dist;
+FILE *datos;
 
 if(RhoVsT!=NULL)
 {
 	int T_max=RhoVsT->i_max;
 	int NoEspecies=RhoVsT->j_max;
 	float NoEnsambles=(float)RhoVsT->NoEnsambles;
-
-	datos=AbreRhoVsTEn(contenedor); 
 	int T,e;
-	for(T=0;T<=T_max;T++)
+	datos=AbreRhoVsTEn(contenedor);
+	
+	fprintf(datos,"T total pcGrowthR(tot)");
+	for(e=1;e<=NoEspecies;e++)
 	{
+		fprintf(datos," species(%d) pc_GrowthR(%d)",e,e);
+	}
+	fprintf(datos, "\n");
+	
+	float now,next;
+	for(T=1;T<(T_max-1);T++)
+	{
+		fprintf(datos, "%d",T);
 		for(e=0;e<=NoEspecies;e++)
 		{
-				fprintf(datos,"%d %f %d\n",T,RhoVsT->array[T][e]/NoEnsambles,e);
+			now=RhoVsT->array[T][e]/NoEnsambles;
+			next=RhoVsT->array[T+1][e]/NoEnsambles;
+			fprintf(datos, " %f %f",now, (next - now)/(now*TimeUnit));
+				//fprintf(datos,"%d %f %d\n",T,RhoVsT->array[T][e]/NoEnsambles,e);
 				//printf("guadando:%d %f %d NoEnsambles=%d \n",T,RhoVsT->array[T][e]/NoEnsambles,e, RhoVsT->NoEnsambles);
 		}
-		
+		fprintf(datos, "\n");
 	}
 	fclose(datos);
 }
 
-if(RhoDist!=NULL)
-{
-	int RhoPart;
-	char archDist[250];
+//if(RhoDist!=NULL)
+//{
+	//int RhoPart;
+	//char archDist[250];
 
-	sprintf(archDist,"%s/RhoDist_T=%d_Samples=%d",contenedor,RhoDist->T,RhoDist->NoEnsambles);
-	dist=fopen(archDist,"w");
-	fputs("# Rho   Prob\n",dist);
-		for(RhoPart=0;RhoPart<=(RhoDist->i_max);RhoPart++)
-		{
-			fprintf(dist,"%f %f\n",((float)RhoPart) * (RhoDist->TamParticion),(float)(RhoDist->array[RhoPart])/(float)(RhoDist->NoEnsambles));
-		}
+	//sprintf(archDist,"%s/RhoDist_T=%d_Samples=%d",contenedor,RhoDist->T,RhoDist->NoEnsambles);
+	//dist=fopen(archDist,"w");
+	//fputs("# Rho   Prob\n",dist);
+		//for(RhoPart=0;RhoPart<=(RhoDist->i_max);RhoPart++)
+		//{
+			//fprintf(dist,"%f %f\n",((float)RhoPart) * (RhoDist->TamParticion),(float)(RhoDist->array[RhoPart])/(float)(RhoDist->NoEnsambles));
+		//}
 		
-	fclose(dist);
-}
+	//fclose(dist);
+//}
 
 return;
 }
@@ -642,14 +650,11 @@ void GuardaFloat1D_MP(char *contenedor,char *nombre, Float1D_MP *MP_Float1D)
 	char nombreCom[150];
 	
 		printf("Guardando .. \n");
-		sprintf(nombreCom,"DATOS/%s/%s",contenedor,nombre);
-		Arch = fopen(nombreCom,"w");
+		sprintf(nombreCom,"%s/%s",contenedor,nombre);
+		Arch = fopen(nombreCom,"a");
 		for(i=0;i<=NDX;i++)
 		{
-				if(MP_Float1D->array[i]!=0.0)
-				{
 					fprintf(Arch,"%d %f\n",i,MP_Float1D->array[i]/((float)MP_Float1D->NoEnsambles));
-				}
 		}
 		fclose(Arch);
 		printf("Se ha Guardado.\n");

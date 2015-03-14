@@ -93,21 +93,43 @@ int ho = (es->TIPO[i][j] * 10) - 5;	//Nicho0 cambiar cuando cambie numero de esp
 	}else{  //creation o coagulacion o nada
 		if(Rand<=(pDead + pCreacion)) //creation
 		{
-			radioCre=env->param[es->TIPO[i][j]].RadioBirth;
-			EligeUniforme(i,j,radioCre,&vecino);
-			
-			if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
-			if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
-			if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
-			if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
-			
-			if(s[vecino.i][vecino.j]==0)
+			int alle_go=1;
+			if(env->alle_effect > 0)
 			{
-				s[vecino.i][vecino.j]=1;
-				(es->ON)++;
-				SO[(es->ON)]=vecino;
-				es->INDICE[vecino.i][vecino.j]=(es->ON);
-				es->TIPO[vecino.i][vecino.j]=es->TIPO[i][j];
+				radioCre=env->param[es->TIPO[i][j]].alle_range;
+				EligeUniforme(i,j,radioCre,&vecino);
+				
+				if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
+				if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
+				if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
+				if(vecino.j > NDY){vecino.j = vecino.j - NDY;} 
+				if(s[vecino.i][vecino.j] <= 0)
+				{
+					if(Rand<=(pDead + pCreacion*env->alle_effect))
+					{
+						alle_go=0;
+					}
+				}
+			}
+			
+			if(alle_go==1)
+			{
+				radioCre=env->param[es->TIPO[i][j]].RadioBirth;
+				EligeUniforme(i,j,radioCre,&vecino);
+				
+				if(vecino.i <= 0){vecino.i = NDX + vecino.i;}
+				if(vecino.j <= 0){vecino.j = NDY + vecino.j;}
+				if(vecino.i > NDX){vecino.i = vecino.i - NDX;}
+				if(vecino.j > NDY){vecino.j = vecino.j - NDY;}   //NOTA: Peligro de segmentation fault si el radio es mayor al lado de la maya
+				
+				if(s[vecino.i][vecino.j]==0)
+				{
+					s[vecino.i][vecino.j]=1;
+					(es->ON)++;
+					SO[(es->ON)]=vecino;
+					es->INDICE[vecino.i][vecino.j]=(es->ON);
+					es->TIPO[vecino.i][vecino.j]=es->TIPO[i][j];
+				}
 			}
 			
 		}else{ //coagulacion1 o 2 o nada
@@ -152,3 +174,30 @@ int ho = (es->TIPO[i][j] * 10) - 5;	//Nicho0 cambiar cuando cambie numero de esp
 	}
 return;
 }
+
+float calculate_metabolic_time(alle_env *env)
+{	
+	float MaxMetabolic=0.0;
+	if(env->param==NULL)
+	{
+		printf("No hay parametros a normalizar\n");
+		return;
+	}else{
+		int i;
+		float Metabolizmo=0.0;
+		
+		for(i=1;i<=env->NumberOfSpecies;i++)
+		{
+			Metabolizmo=env->param[i].Birth;
+			Metabolizmo+=env->param[i].Coagulation;
+			Metabolizmo+=env->param[i].CoagulationIntra;
+			Metabolizmo+=env->param[i].Dead;
+			if(MaxMetabolic<Metabolizmo)
+			{
+				MaxMetabolic=Metabolizmo;
+			}
+		}
+	}
+return MaxMetabolic;
+}
+
