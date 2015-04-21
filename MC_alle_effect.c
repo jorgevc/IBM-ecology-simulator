@@ -23,7 +23,7 @@ Copyright 2015 Jorge Velazquez
 #include "GNA.h"
 #include <stdio.h>
 #include <time.h>
-
+#include <sqlite3.h>
 
 void MC_sweep_alle(estado *es, alle_env *env)
 {
@@ -201,3 +201,20 @@ float calculate_metabolic_time(alle_env *env)
 return MaxMetabolic;
 }
 
+int store_sim_db(char *values)
+{
+	sqlite3 *db;
+    char *err_msg = 0;
+    int inserted_id = -1;
+    int rc = sqlite3_open("alle.db", &db);
+    if( rc ){
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+   }else{
+		char sql[5000];
+		sprintf(sql, "INSERT INTO single_species VALUES (%s);", values);
+		rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
+		inserted_id = sqlite3_last_insert_rowid(db);
+		sqlite3_close(db);
+	}
+return inserted_id;
+}

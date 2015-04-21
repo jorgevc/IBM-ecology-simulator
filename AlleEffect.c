@@ -30,29 +30,31 @@ Copyright 2015 Jorge Velazquez
 #include "MC_alle_effect.h"
 #include "EntSalArb_MP.h"
 #include "GNA.h"
-#include "conn_mysql.h"
+//#include "conn_mysql.h"
 
 
 main(){	
 	
 ///////////////////////////Inicializa parametros de la simulacion
-int NDX=150;
+int NDX=300;
 int NDY=NDX;
 int T_max = 100;
-int NoEnsambles=12;
+int NoEnsambles=20;
 
 int CantidadEspecies=1;
 
 alle_env *env = (alle_env *)malloc(1 * sizeof(alle_env));
 env->param = (especie *)malloc((CantidadEspecies + 1) * sizeof(especie));
-env->param[1].Birth= 1.0;
+
 env->param[1].Coagulation = 0.0; //Brown usa: 0.00002; 
 env->param[1].CoagulationIntra= 0.0; //Modelo J-C 0.0008
-env->param[1].Dead= 0.5;
+env->param[1].Dead= 0.0;
 env->param[1].RadioBirth= 50;
-env->param[1].RadioCoa= 10;
-env->param[1].RadioCoaIntra= 10;  //Modelo Heteromyopia 20
+env->param[1].RadioCoa= 50;
+env->param[1].RadioCoaIntra= 50;  //Modelo Heteromyopia 20
 env->param[1].alle_range= 50;
+
+env->param[1].Birth=1.0; //4.0*env->param[1].Dead;//15.0;
 
 //env->param[2].Birth= 1.0;
 //env->param[2].Coagulation= 0.0; //Brown usa: 0.00002;
@@ -64,9 +66,9 @@ env->param[1].alle_range= 50;
 
 env->NumberOfSpecies=CantidadEspecies;
 env->Max_Metabolic=calculate_metabolic_time(env);
-env->alle_effect = 0.3;
+env->alle_effect = 0.0;
 
-omp_set_num_threads(4);
+//omp_set_num_threads(8);
 
 //date time of simulation
 time_t raw_now = time(NULL);
@@ -117,7 +119,7 @@ Float1D_MP SummaryCorrelation;
 					for(Par=0;Par<MaxPar;Par++)
 					{
 					//InsertaIndividuosAleatorio(&e[Par],100,NoEspecie);
-					GeneraEstadoAleatorio(&e[Par], 0.1, 1);
+					GeneraEstadoAleatorio(&e[Par], 0.05, 1);
 					//GeneraEstadoAleatorio(&e[Par], 0.2, 2);
 					}
 
@@ -211,7 +213,7 @@ Float1D_MP SummaryCorrelation;
 	
 			//// Guarda parametros en MySql	y crea CONTENEDOR
 	char contenedor[300];
-	sprintf(contenedor,"alle_data");
+	sprintf(contenedor,"alle_data_2");
 	CreaContenedor(contenedor);	
 		
 	char values[300];
@@ -234,16 +236,13 @@ Float1D_MP SummaryCorrelation;
 	contenedor
 	);
 	
-	printf("MySQL client version: %s\n", mysql_get_client_info());
-	MYSQL *con = connect_db("localhost","alle", "effect", "alle");
-	int inserted_id = insert_into_db(con, "single_species",values);
-	mysql_close(con);
+	int inserted_id = store_sim_db(values);
 	char contenedorCompleto[200];
 	sprintf(contenedorCompleto,"%s/%d",contenedor,inserted_id);
 	CreaContenedor(contenedorCompleto);
 
 	//GuardaCorrelacion_MP(contenedorCompleto, "1-1" , &MP_Correlacion_1G);			
-	GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,env->Max_Metabolic);
+	GuardaRhoVsT_MP(contenedorCompleto,&MP_RhoVsT_1,1.0/env->Max_Metabolic);
 	
 	FILE *summary;
 	char summaryName[200];
@@ -257,15 +256,15 @@ Float1D_MP SummaryCorrelation;
 	
 	FILE *aA;
 	char archivo[200];
-	sprintf(archivo,"Plots/simulation.tex");	
+	sprintf(archivo,"Plots2/simulation.tex");	
 	aA=fopen(archivo, "w");
 	fprintf(aA,"\\newcommand{\\data}{../%s/}\n\\newcommand{\\plotTitle}{id=%d  }",contenedorCompleto,inserted_id);
 	fclose(aA);
-	sprintf(archivo,"Plots/include_make");
+	sprintf(archivo,"Plots2/include_make");
 	aA=fopen(archivo, "w");
 	fprintf(aA,"id = %d\n",inserted_id);
 	fclose(aA);
-	system("cd Plots; make figure");
+	system("cd Plots2; make figure");
 	//////
 	
  
