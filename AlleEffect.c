@@ -41,14 +41,14 @@ int NDY=NDX;
 int T_max = 100;
 int NoEnsambles=20;
 
-int CantidadEspecies=1;
+int CantidadEspecies=1;-+
 
 alle_env *env = (alle_env *)malloc(1 * sizeof(alle_env));
 env->param = (especie *)malloc((CantidadEspecies + 1) * sizeof(especie));
 
 env->param[1].Coagulation = 0.0; //Brown usa: 0.00002; 
 env->param[1].CoagulationIntra= 0.0; //Modelo J-C 0.0008
-env->param[1].Dead= 0.0;
+env->param[1].Dead= 0.17;
 env->param[1].RadioBirth= 50;
 env->param[1].RadioCoa= 50;
 env->param[1].RadioCoaIntra= 50;  //Modelo Heteromyopia 20
@@ -66,7 +66,7 @@ env->param[1].Birth=1.0; //4.0*env->param[1].Dead;//15.0;
 
 env->NumberOfSpecies=CantidadEspecies;
 env->Max_Metabolic=calculate_metabolic_time(env);
-env->alle_effect = 0.0;
+env->alle_effect = 1.0;
 
 //omp_set_num_threads(8);
 
@@ -119,7 +119,7 @@ Float1D_MP SummaryCorrelation;
 					for(Par=0;Par<MaxPar;Par++)
 					{
 					//InsertaIndividuosAleatorio(&e[Par],100,NoEspecie);
-					GeneraEstadoAleatorio(&e[Par], 0.05, 1);
+					GeneraEstadoAleatorio(&e[Par], 0.25, 1);
 					//GeneraEstadoAleatorio(&e[Par], 0.2, 2);
 					}
 
