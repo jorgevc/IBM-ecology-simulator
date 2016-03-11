@@ -116,6 +116,9 @@ double gaussM()
 {
 	static double V1, V2, S;
 	static int phase = 0;
+	
+	#pragma omp threadprivate(V1, V2, S, phase)
+	
 	double X;
 
 	if(phase == 0) {
